@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, Filter, User, Linkedin } from 'lucide-react'
 import { api } from '@/services/api'
 import ContactForm from '@/components/ContactForm'
@@ -8,6 +8,8 @@ export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('')
   const [contactTypeFilter, setContactTypeFilter] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingContact, setEditingContact] = useState(null)
+  const queryClient = useQueryClient()
 
   // Create a stable query key that doesn't change on every filter update
   const queryKey = useMemo(() => ['contacts'], [])
@@ -16,6 +18,17 @@ export default function Contacts() {
     queryKey,
     queryFn: () => api.get('/contacts/').then(res => res.data),
     staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  const deleteContactMutation = useMutation({
+    mutationFn: (contactId: string) => api.delete(`/contacts/${contactId}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+    },
+    onError: (error: any) => {
+      console.error('Error deleting contact:', error)
+      alert('Failed to delete contact. Please try again.')
+    }
   })
 
   // Filter contacts client-side to prevent API calls on every filter change
@@ -53,8 +66,20 @@ export default function Contacts() {
   }, [])
 
   const handleAddContact = useCallback(() => {
+    setEditingContact(null)
     setIsFormOpen(true)
   }, [])
+
+  const handleEditContact = useCallback((contact: any) => {
+    setEditingContact(contact)
+    setIsFormOpen(true)
+  }, [])
+
+  const handleDeleteContact = useCallback((contactId: string) => {
+    if (window.confirm('Are you sure you want to delete this contact?')) {
+      deleteContactMutation.mutate(contactId)
+    }
+  }, [deleteContactMutation])
 
   if (isLoading) {
     return (
@@ -182,10 +207,16 @@ export default function Contacts() {
                     </td>
                     <td>
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 text-neutral-400 hover:text-neutral-600 transition-colors">
+                        <button 
+                          onClick={() => handleEditContact(contact)}
+                          className="p-2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
                           Edit
                         </button>
-                        <button className="p-2 text-neutral-400 hover:text-red-600 transition-colors">
+                        <button 
+                          onClick={() => handleDeleteContact(contact.id)}
+                          className="p-2 text-neutral-400 hover:text-red-600 transition-colors"
+                        >
                           Delete
                         </button>
                       </div>
@@ -226,6 +257,7 @@ export default function Contacts() {
       <ContactForm 
         isOpen={isFormOpen} 
         onClose={() => setIsFormOpen(false)} 
+        contact={editingContact}
       />
     </div>
   )

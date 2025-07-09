@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, Mail, Phone, Link } from 'lucide-react'
 import { api } from '@/services/api'
@@ -6,6 +6,7 @@ import { api } from '@/services/api'
 interface ContactFormProps {
   isOpen: boolean
   onClose: () => void
+  contact?: any | null
 }
 
 interface FormData {
@@ -28,11 +29,29 @@ const initialFormData: FormData = {
   notes: ''
 }
 
-export default function ContactForm({ isOpen, onClose }: ContactFormProps) {
+export default function ContactForm({ isOpen, onClose, contact }: ContactFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<FormData>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const queryClient = useQueryClient()
+
+  const isEditing = contact != null
+
+  useEffect(() => {
+    if (isEditing && contact) {
+      setFormData({
+        name: contact.name || '',
+        email: contact.email || '',
+        company: contact.company || '',
+        role: contact.role || '',
+        linkedin_url: contact.linkedin_url || '',
+        contact_type: contact.contact_type || 'referral',
+        notes: contact.notes || ''
+      })
+    } else {
+      setFormData(initialFormData)
+    }
+  }, [contact, isEditing, isOpen])
 
   const createContactMutation = useMutation({
     mutationFn: (data: FormData) => api.post('/contacts/', data),
@@ -45,6 +64,18 @@ export default function ContactForm({ isOpen, onClose }: ContactFormProps) {
     onError: (error: any) => {
       console.error('Error creating contact:', error)
       alert('Failed to create contact. Please try again.')
+    }
+  })
+
+  const updateContactMutation = useMutation({
+    mutationFn: (data: FormData) => api.put(`/contacts/${contact.id}/`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+      handleClose()
+    },
+    onError: (error: any) => {
+      console.error('Error updating contact:', error)
+      alert('Failed to update contact. Please try again.')
     }
   })
 
@@ -93,7 +124,11 @@ export default function ContactForm({ isOpen, onClose }: ContactFormProps) {
 
     setIsSubmitting(true)
     try {
-      await createContactMutation.mutateAsync(formData)
+      if (isEditing) {
+        await updateContactMutation.mutateAsync(formData)
+      } else {
+        await createContactMutation.mutateAsync(formData)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -126,7 +161,9 @@ export default function ContactForm({ isOpen, onClose }: ContactFormProps) {
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">Add New Contact</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                {isEditing ? 'Edit Contact' : 'Add New Contact'}
+              </h3>
               <button
                 onClick={handleClose}
                 className="text-gray-400 hover:text-gray-600"
