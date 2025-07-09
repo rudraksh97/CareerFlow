@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, Calendar, ExternalLink, Building, User, Mail, FileText, Upload } from 'lucide-react'
 import { api } from '@/services/api'
@@ -43,6 +43,8 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [resumeFileName, setResumeFileName] = useState<string>('')
   const queryClient = useQueryClient()
+  const [isFetchingCompanyInfo, setIsFetchingCompanyInfo] = useState(false);
+
 
   const createApplicationMutation = useMutation({
     mutationFn: async (data: { formData: FormData; file: File }) => {
@@ -75,6 +77,45 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
       alert('Failed to create application. Please try again.')
     }
   })
+
+  // Debounce hook
+  const useDebounce = (value: string, delay: number) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+    return debouncedValue;
+  };
+
+  const debouncedCompanyName = useDebounce(formData.company_name, 500);
+
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      if (debouncedCompanyName.trim().length > 2) {
+        setIsFetchingCompanyInfo(true);
+        try {
+          const { data } = await api.get(`/applications/company-info/?company_name=${encodeURIComponent(debouncedCompanyName)}`);
+          if (data) {
+            setFormData(prev => ({
+              ...prev,
+              portal_url: data.portal_url || prev.portal_url,
+              source: data.source || prev.source,
+            }));
+          }
+        } catch (error) {
+          console.error("Failed to fetch company info", error);
+        } finally {
+          setIsFetchingCompanyInfo(false);
+        }
+      }
+    };
+    fetchCompanyInfo();
+  }, [debouncedCompanyName]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData & { resume: string }> = {}
@@ -200,20 +241,14 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-10" id="application-form">
+          <form onSubmit={handleSubmit} className="space-y-8" id="application-form">
             {/* Company Information */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg ring-2 ring-blue-100 bg-blue-50">
-                  <Building className="h-4 w-4 text-blue-600" />
-                </span>
-                <span className="text-lg font-semibold text-neutral-900">Company Information</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Company Name *
-                  </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Company Name *
+                </label>
+                <div className="relative">
                   <input
                     type="text"
                     value={formData.company_name}
@@ -221,250 +256,215 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
                     className={`input-field ${errors.company_name ? 'border-red-500' : ''}`}
                     placeholder="e.g., Google, Microsoft"
                   />
-                  {errors.company_name && (
-                    <p className="mt-2 text-sm text-red-600">{errors.company_name}</p>
+                  {isFetchingCompanyInfo && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-400"></div>
+                    </div>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Job Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.job_title}
-                    onChange={(e) => handleInputChange('job_title', e.target.value)}
-                    className={`input-field ${errors.job_title ? 'border-red-500' : ''}`}
-                    placeholder="e.g., Software Engineer"
-                  />
-                  {errors.job_title && (
-                    <p className="mt-2 text-sm text-red-600">{errors.job_title}</p>
-                  )}
-                </div>
+                {errors.company_name && (
+                  <p className="mt-2 text-sm text-red-600">{errors.company_name}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Job Title *
+                </label>
+                <input
+                  type="text"
+                  value={formData.job_title}
+                  onChange={(e) => handleInputChange('job_title', e.target.value)}
+                  className={`input-field ${errors.job_title ? 'border-red-500' : ''}`}
+                  placeholder="e.g., Software Engineer"
+                />
+                {errors.job_title && (
+                  <p className="mt-2 text-sm text-red-600">{errors.job_title}</p>
+                )}
               </div>
             </div>
 
             {/* Job Details */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg ring-2 ring-purple-100 bg-purple-50">
-                  <ExternalLink className="h-4 w-4 text-purple-600" />
-                </span>
-                <span className="text-lg font-semibold text-neutral-900">Job Details</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Job ID *
+                </label>
+                <input
+                  type="text"
+                  value={formData.job_id}
+                  onChange={(e) => handleInputChange('job_id', e.target.value)}
+                  className={`input-field ${errors.job_id ? 'border-red-500' : ''}`}
+                  placeholder="e.g., JOB-12345"
+                />
+                {errors.job_id && (
+                  <p className="mt-2 text-sm text-red-600">{errors.job_id}</p>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Job ID *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.job_id}
-                    onChange={(e) => handleInputChange('job_id', e.target.value)}
-                    className={`input-field ${errors.job_id ? 'border-red-500' : ''}`}
-                    placeholder="e.g., JOB-12345"
-                  />
-                  {errors.job_id && (
-                    <p className="mt-2 text-sm text-red-600">{errors.job_id}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Job URL *
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.job_url}
-                    onChange={(e) => handleInputChange('job_url', e.target.value)}
-                    className={`input-field ${errors.job_url ? 'border-red-500' : ''}`}
-                    placeholder="https://company.com/job-posting"
-                  />
-                  {errors.job_url && (
-                    <p className="mt-2 text-sm text-red-600">{errors.job_url}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Portal URL
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.portal_url}
-                    onChange={(e) => handleInputChange('portal_url', e.target.value)}
-                    className={`input-field ${errors.portal_url ? 'border-red-500' : ''}`}
-                    placeholder="https://company.com/application-portal"
-                  />
-                  {errors.portal_url && (
-                    <p className="mt-2 text-sm text-red-600">{errors.portal_url}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Source *
-                  </label>
-                  <select
-                    value={formData.source}
-                    onChange={(e) => handleInputChange('source', e.target.value)}
-                    className="input-field"
-                  >
-                    <option value="company_website">Company Website</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="indeed">Indeed</option>
-                    <option value="glassdoor">Glassdoor</option>
-                    <option value="angelist">AngelList</option>
-                    <option value="yc">Y Combinator</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Job URL *
+                </label>
+                <input
+                  type="url"
+                  value={formData.job_url}
+                  onChange={(e) => handleInputChange('job_url', e.target.value)}
+                  className={`input-field ${errors.job_url ? 'border-red-500' : ''}`}
+                  placeholder="https://company.com/job-posting"
+                />
+                {errors.job_url && (
+                  <p className="mt-2 text-sm text-red-600">{errors.job_url}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Portal URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.portal_url}
+                  onChange={(e) => handleInputChange('portal_url', e.target.value)}
+                  className={`input-field ${errors.portal_url ? 'border-red-500' : ''}`}
+                  placeholder="https://company.com/application-portal"
+                />
+                {errors.portal_url && (
+                  <p className="mt-2 text-sm text-red-600">{errors.portal_url}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Source *
+                </label>
+                <select
+                  value={formData.source}
+                  onChange={(e) => handleInputChange('source', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="company_website">Company Website</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="indeed">Indeed</option>
+                  <option value="glassdoor">Glassdoor</option>
+                  <option value="angelist">AngelList</option>
+                  <option value="yc">Y Combinator</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
             </div>
 
             {/* Application Details */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg ring-2 ring-emerald-100 bg-emerald-50">
-                  <Calendar className="h-4 w-4 text-emerald-600" />
-                </span>
-                <span className="text-lg font-semibold text-neutral-900">Application Details</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Date Applied *
+                </label>
+                <input
+                  type="date"
+                  value={formData.date_applied}
+                  onChange={(e) => handleInputChange('date_applied', e.target.value)}
+                  className={`input-field ${errors.date_applied ? 'border-red-500' : ''}`}
+                />
+                {errors.date_applied && (
+                  <p className="mt-2 text-sm text-red-600">{errors.date_applied}</p>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Date Applied *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date_applied}
-                    onChange={(e) => handleInputChange('date_applied', e.target.value)}
-                    className={`input-field ${errors.date_applied ? 'border-red-500' : ''}`}
-                  />
-                  {errors.date_applied && (
-                    <p className="mt-2 text-sm text-red-600">{errors.date_applied}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Status *
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="input-field"
-                  >
-                    <option value="applied">Applied</option>
-                    <option value="interview">Interview</option>
-                    <option value="offer">Offer</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="withdrawn">Withdrawn</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Status *
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="applied">Applied</option>
+                  <option value="interview">Interview</option>
+                  <option value="offer">Offer</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="withdrawn">Withdrawn</option>
+                  <option value="pending">Pending</option>
+                </select>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg ring-2 ring-amber-100 bg-amber-50">
-                  <User className="h-4 w-4 text-amber-600" />
-                </span>
-                <span className="text-lg font-semibold text-neutral-900">Contact Information</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Email Used *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email_used}
+                  onChange={(e) => handleInputChange('email_used', e.target.value)}
+                  className={`input-field ${errors.email_used ? 'border-red-500' : ''}`}
+                  placeholder="your.email@example.com"
+                />
+                {errors.email_used && (
+                  <p className="mt-2 text-sm text-red-600">{errors.email_used}</p>
+                )}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Email Used *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email_used}
-                    onChange={(e) => handleInputChange('email_used', e.target.value)}
-                    className={`input-field ${errors.email_used ? 'border-red-500' : ''}`}
-                    placeholder="your.email@example.com"
-                  />
-                  {errors.email_used && (
-                    <p className="mt-2 text-sm text-red-600">{errors.email_used}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Max Applications
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.max_applications}
-                    onChange={(e) => handleInputChange('max_applications', e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., 5 per month"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Max Applications
+                </label>
+                <input
+                  type="text"
+                  value={formData.max_applications}
+                  onChange={(e) => handleInputChange('max_applications', e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., 5 per month"
+                />
               </div>
             </div>
 
             {/* Resume Upload */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg ring-2 ring-indigo-100 bg-indigo-50">
-                  <FileText className="h-4 w-4 text-indigo-600" />
-                </span>
-                <span className="text-lg font-semibold text-neutral-900">Resume</span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Resume File *
-                </label>
-                <div className="space-y-4">
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="resume-upload"
-                    />
-                    <label
-                      htmlFor="resume-upload"
-                      className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                        errors.resume ? 'border-red-300 bg-red-50' : 'border-neutral-300 hover:border-neutral-400'
-                      }`}
-                    >
-                      <div className="text-center">
-                        <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
-                        <p className="text-sm text-neutral-600">
-                          {resumeFileName ? resumeFileName : 'Click to upload resume (PDF, DOC, DOCX)'}
-                        </p>
-                        <p className="text-xs text-neutral-500 mt-1">
-                          Max file size: 10MB
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                  {errors.resume && (
-                    <p className="text-sm text-red-600">{errors.resume}</p>
-                  )}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Resume File *
+              </label>
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="resume-upload"
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                      errors.resume ? 'border-red-300 bg-red-50' : 'border-neutral-300 hover:border-neutral-400'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                      <p className="text-sm text-neutral-600">
+                        {resumeFileName ? resumeFileName : 'Click to upload resume (PDF, DOC, DOCX)'}
+                      </p>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        Max file size: 10MB
+                      </p>
+                    </div>
+                  </label>
                 </div>
+                {errors.resume && (
+                  <p className="text-sm text-red-600">{errors.resume}</p>
+                )}
               </div>
             </div>
 
             {/* Notes */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center justify-center h-8 w-8 rounded-lg ring-2 ring-gray-100 bg-gray-50">
-                  <Mail className="h-4 w-4 text-gray-600" />
-                </span>
-                <span className="text-lg font-semibold text-neutral-900">Additional Notes</span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  rows={4}
-                  className="input-field resize-none"
-                  placeholder="Any additional notes about this application..."
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Notes
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
+                rows={4}
+                className="input-field resize-none"
+                placeholder="Any additional notes about this application..."
+              />
             </div>
           </form>
         </div>

@@ -11,7 +11,13 @@ from pathlib import Path
 
 from ..models.database import get_db
 from ..models.application import Application, ApplicationStatus, ApplicationSource
-from ..schemas import ApplicationCreate, ApplicationUpdate, Application as ApplicationSchema, ApplicationFilter
+from ..schemas import (
+    ApplicationCreate, 
+    ApplicationUpdate, 
+    Application as ApplicationSchema, 
+    ApplicationFilter,
+    CompanyInfo
+)
 
 router = APIRouter()
 
@@ -139,6 +145,21 @@ def get_recent_applications(db: Session = Depends(get_db)):
     """Get the 5 most recent applications"""
     applications = db.query(Application).order_by(Application.created_at.desc()).limit(5).all()
     return applications
+
+@router.get("/company-info/", response_model=Optional[CompanyInfo])
+def get_company_info(company_name: str, db: Session = Depends(get_db)):
+    """Get portal_url and source for a given company from the most recent application."""
+    application = db.query(Application) \
+        .filter(Application.company_name.ilike(f"%{company_name}%")) \
+        .order_by(Application.date_applied.desc()) \
+        .first()
+    
+    if application:
+        return CompanyInfo(
+            portal_url=application.portal_url,
+            source=application.source
+        )
+    return None
 
 @router.get("/{application_id}/", response_model=ApplicationSchema)
 def get_application(application_id: str, db: Session = Depends(get_db)):

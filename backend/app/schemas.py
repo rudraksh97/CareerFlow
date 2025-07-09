@@ -120,4 +120,9 @@ class ContactAnalytics(BaseModel):
     total_contacts: int
     contacts_by_type: dict
     contacts_by_company: dict
-    recent_interactions: List[Interaction] 
+    recent_interactions: List[Interaction]
+
+# Autofill Schemas
+class CompanyInfo(BaseModel):
+    portal_url: Optional[str] = None
+    source: Optional[ApplicationSource] = None 
