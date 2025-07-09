@@ -1,5 +1,22 @@
 FROM python:3.11-slim
 
+# Build arguments for version information
+ARG VERSION="unknown"
+ARG BUILD_DATE="unknown"
+ARG COMMIT_HASH="unknown"
+ARG BRANCH="unknown"
+
+# Labels for metadata
+LABEL org.opencontainers.image.title="PATS Backend"
+LABEL org.opencontainers.image.description="Personal Application Tracking System - Backend API"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${COMMIT_HASH}"
+LABEL org.opencontainers.image.source="https://github.com/rudraksh97/PATS"
+LABEL pats.version="${VERSION}"
+LABEL pats.component="backend"
+LABEL pats.branch="${BRANCH}"
+
 WORKDIR /app
 
 # Install system dependencies

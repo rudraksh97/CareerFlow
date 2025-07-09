@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { motion } from 'framer-motion';
 import { Save, AlertCircle } from 'lucide-react';
+import VersionDisplay from '@/components/VersionDisplay';
 
 const Settings = () => {
   const queryClient = useQueryClient();
@@ -82,6 +83,11 @@ const Settings = () => {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="card max-w-2xl p-8 mt-6">
+        <h2 className="text-lg font-semibold text-neutral-900 mb-4">Version Information</h2>
+        <VersionDisplay showDetails={true} />
       </div>
 
       {notification.show && (

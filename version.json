@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "name": "Personal Application Tracking System (PATS)",
+  "description": "A comprehensive system to track job applications and manage contacts",
+  "release_date": "2024-01-22",
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2024-01-22",
+      "changes": [
+        "Initial release",
+        "Job application tracking",
+        "Contact management",
+        "Analytics dashboard",
+        "Resume and cover letter management"
+      ]
+    }
+  ],
+  "api_version": "v1",
+  "build_info": {
+    "build_date": "",
+    "commit_hash": "",
+    "branch": ""
+  }
+} 

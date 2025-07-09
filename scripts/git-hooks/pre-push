@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Git pre-push hook to check version consistency
+# This ensures that all version files are in sync before pushing
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+echo "🔍 Checking version consistency..."
+
+# Read versions from different files
+VERSION_JSON_VERSION=$(python3 -c "
+import json
+try:
+    with open('$PROJECT_ROOT/version.json', 'r') as f:
+        data = json.load(f)
+        print(data['version'])
+except:
+    print('unknown')
+")
+
+PACKAGE_JSON_VERSION=$(python3 -c "
+import json
+try:
+    with open('$PROJECT_ROOT/frontend/package.json', 'r') as f:
+        data = json.load(f)
+        print(data['version'])
+except:
+    print('unknown')
+")
+
+FRONTEND_TS_VERSION=$(python3 -c "
+import re
+try:
+    with open('$PROJECT_ROOT/frontend/src/utils/version.ts', 'r') as f:
+        content = f.read()
+        match = re.search(r'export const FRONTEND_VERSION = \"([^\"]+)\";', content)
+        print(match.group(1) if match else 'unknown')
+except:
+    print('unknown')
+")
+
+echo "  version.json: $VERSION_JSON_VERSION"
+echo "  package.json: $PACKAGE_JSON_VERSION"
+echo "  version.ts: $FRONTEND_TS_VERSION"
+
+# Check if all versions match
+if [ "$VERSION_JSON_VERSION" = "$PACKAGE_JSON_VERSION" ] && [ "$VERSION_JSON_VERSION" = "$FRONTEND_TS_VERSION" ]; then
+    echo "✅ All versions are in sync ($VERSION_JSON_VERSION)"
+    exit 0
+else
+    echo "❌ Version mismatch detected!"
+    echo ""
+    echo "To fix this, run one of the following:"
+    echo "  ./scripts/version current"
+    echo "  ./scripts/version bump patch"
+    echo "  ./scripts/version set $VERSION_JSON_VERSION"
+    echo ""
+    echo "Or push with --no-verify to skip this check"
+    exit 1
+fi 

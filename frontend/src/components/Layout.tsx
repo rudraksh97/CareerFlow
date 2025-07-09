@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import VersionDisplay from './VersionDisplay'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -113,6 +114,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 )
               })}
             </ul>
+            <div className="mt-4 px-3">
+              <VersionDisplay />
+            </div>
           </nav>
         </div>
       </div>
@@ -174,6 +178,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </ul>
               </li>
             </ul>
+            <div className="mt-4 px-2">
+              <VersionDisplay />
+            </div>
           </nav>
         </div>
       </div>
@@ -212,18 +219,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </motion.main>
         </AnimatePresence>
-        <footer className="py-6 pr-8 text-right text-sm text-neutral-500">
-        <a href="https://github.com/rudraksh97/PATS" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-neutral-700 transition-colors">
-            <Github className="h-4 w-4" />
-            Source Code
-          </a>
-          <span className="mx-2">·</span>
-          <span>
-            Created by{' '}
-            <a href="https://github.com/rudraksh97" target="_blank" rel="noopener noreferrer" className="font-medium hover:text-neutral-700 transition-colors">
-              rudraksh97
-            </a>
-          </span>
+        <footer className="py-6 px-4 sm:px-6 lg:px-8 text-right text-sm text-neutral-500">
+          <div className="flex justify-between items-center">
+            <VersionDisplay />
+            <div>
+              <a href="https://github.com/rudraksh97/PATS" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-neutral-700 transition-colors">
+                <Github className="h-4 w-4" />
+                Source Code
+              </a>
+              <span className="mx-2">·</span>
+              <span>
+                Created by{' '}
+                <a href="https://github.com/rudraksh97" target="_blank" rel="noopener noreferrer" className="font-medium hover:text-neutral-700 transition-colors">
+                  rudraksh97
+                </a>
+              </span>
+            </div>
+          </div>
         </footer>
       </div>
     </div>

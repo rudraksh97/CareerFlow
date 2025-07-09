@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# PATS Version Manager Wrapper Script
+# Usage: ./scripts/version [command] [options]
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_SCRIPT="$SCRIPT_DIR/version_manager.py"
+
+# Check if Python 3 is available
+if ! command -v python3 &> /dev/null; then
+    echo "Error: Python 3 is required but not found"
+    exit 1
+fi
+
+# Make sure the Python script is executable
+chmod +x "$PYTHON_SCRIPT"
+
+# Run the Python version manager with all arguments
+python3 "$PYTHON_SCRIPT" "$@" 

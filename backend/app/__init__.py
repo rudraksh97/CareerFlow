@@ -2,14 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import applications, contacts, analytics, settings, profile, resumes, cover_letters
 from .models.database import engine, Base
+from .version import VERSION_INFO, VERSION
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Personal Application Tracking System (PATS)",
-    description="A comprehensive system to track job applications and manage contacts",
-    version="1.0.0"
+    title=VERSION_INFO["name"],
+    description=VERSION_INFO["description"],
+    version=VERSION_INFO["version"]
 )
 
 # Configure CORS
@@ -33,8 +34,17 @@ app.include_router(cover_letters.router, prefix="/api/cover-letters", tags=["cov
 
 @app.get("/")
 async def root():
-    return {"message": "Personal Application Tracking System API"}
+    return {
+        "message": "Personal Application Tracking System API", 
+        "version": VERSION_INFO["version"],
+        "api_version": VERSION_INFO["api_version"]
+    }
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"} 
+    return {"status": "healthy", "version": VERSION_INFO["version"]}
+
+@app.get("/version")
+async def get_version():
+    """Get detailed version information"""
+    return VERSION_INFO 
