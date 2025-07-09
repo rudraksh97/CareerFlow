@@ -10,7 +10,8 @@ import {
   Menu, 
   X,
   ChevronRight,
-  User
+  User,
+  Github
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -178,7 +179,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
         {/* Top bar */}
         <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white/80 backdrop-blur-lg px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
@@ -204,13 +205,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="py-8"
+            className="py-8 flex-grow"
           >
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
               {children}
             </div>
           </motion.main>
         </AnimatePresence>
+        <footer className="py-6 pr-8 text-right text-sm text-neutral-500">
+        <a href="https://github.com/rudraksh97/PATS" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:text-neutral-700 transition-colors">
+            <Github className="h-4 w-4" />
+            Source Code
+          </a>
+          <span className="mx-2">·</span>
+          <span>
+            Created by{' '}
+            <a href="https://github.com/rudraksh97" target="_blank" rel="noopener noreferrer" className="font-medium hover:text-neutral-700 transition-colors">
+              rudraksh97
+            </a>
+          </span>
+        </footer>
       </div>
     </div>
   )
