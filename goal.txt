@@ -1,0 +1,22 @@
+The aim is to build a simple but powerful Personal Application Tracking System.
+
+When you apply to 100s of jobs, you
+    1. Lose track of Jobs you applied to.
+    2. What job ids you applied to specifically for a company.
+    3. Status of your Application.
+    4. Referee who did or didn't give you referral. What did they ask?
+    5. Job URL
+    6. Applicant portal link (if any)
+    7. What resume did you use to apply to every role. Incase you have different resume for each job you apply to and want to refer later on in the application stage.
+    8. Primary point of contact (If any recruiter is their and their mail ids for future use)
+    9. Which source you used to apply from Angelist, YC, Company Website?
+    10. Apply filters to search for anything.
+    11. Email used to apply.
+    12. Max jobs to apply to.
+
+Tech Stack:
+    1. Python
+    2. React.js
+    3. Docker
+    4. Celery
+    5. Sqlite3

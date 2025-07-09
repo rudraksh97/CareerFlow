@@ -1,0 +1,26 @@
+# Dependencies
+frontend/node_modules/
+
+# Build artifacts
+frontend/dist/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Database files
+*.db
+*.sqlite3
+
+# Uploads
+backend/uploads/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store 
