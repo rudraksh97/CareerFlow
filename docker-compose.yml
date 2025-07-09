@@ -6,6 +6,8 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/data:/app/data
+      - ./backend/uploads:/app/uploads
+      - ./backups:/app/backups
     environment:
       - DATABASE_URL=sqlite:///./data/pats.db
     command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload

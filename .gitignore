@@ -20,6 +20,10 @@ env/
 # Uploads
 backend/uploads/
 
+# Backup files
+backups/
+*.sql
+
 # IDE and OS files
 .vscode/
 .idea/
