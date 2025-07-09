@@ -57,4 +57,12 @@
   .table tr:last-child td {
     @apply border-b-0;
   }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50;
+  }
+
+  .modal-content {
+    @apply bg-white rounded-2xl shadow-xl w-full;
+  }
 } 
