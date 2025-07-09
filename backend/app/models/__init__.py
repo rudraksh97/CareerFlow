@@ -1,6 +1,7 @@
 from .database import Base, get_db
 from .application import Application, ApplicationStatus, ApplicationSource
 from .contact import Contact, ContactType, Interaction
+from .setting import Setting
 
 __all__ = [
     "Base",

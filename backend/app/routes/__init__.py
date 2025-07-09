@@ -1,6 +1,7 @@
-from .applications import router as applications_router
-from .contacts import router as contacts_router
-from .analytics import router as analytics_router
+from . import applications
+from . import contacts
+from . import analytics
+from . import settings
 
 __all__ = [
     "applications_router",

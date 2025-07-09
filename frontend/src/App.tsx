@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Applications from './pages/Applications'
 import Contacts from './pages/Contacts'
 import Analytics from './pages/Analytics'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/applications" element={<Applications />} />
         <Route path="/contacts" element={<Contacts />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Layout>
   )

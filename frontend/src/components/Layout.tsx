@@ -3,7 +3,8 @@ import {
   Home, 
   Briefcase, 
   Users, 
-  BarChart3, 
+  BarChart3,
+  Settings,
   Menu, 
   X,
   ChevronRight
@@ -16,6 +17,7 @@ const navigation = [
   { name: 'Applications', href: '/applications', icon: Briefcase },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 function PatsLogo() {
