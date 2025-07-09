@@ -26,7 +26,7 @@ def create_contact(
         email=contact.email,
         company=contact.company,
         role=contact.role,
-        linkedin_url=contact.linkedin_url,
+        linkedin_url=str(contact.linkedin_url),  # Convert URL to string
         contact_type=contact.contact_type,
         notes=contact.notes
     )
@@ -61,7 +61,7 @@ def get_contacts(
     contacts = query.offset(skip).limit(limit).all()
     return contacts
 
-@router.get("/{contact_id}", response_model=ContactSchema)
+@router.get("/{contact_id}/", response_model=ContactSchema)
 def get_contact(contact_id: str, db: Session = Depends(get_db)):
     """Get a specific contact by ID"""
     contact = db.query(Contact).filter(Contact.id == contact_id).first()
@@ -69,7 +69,7 @@ def get_contact(contact_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Contact not found")
     return contact
 
-@router.put("/{contact_id}", response_model=ContactSchema)
+@router.put("/{contact_id}/", response_model=ContactSchema)
 def update_contact(
     contact_id: str,
     contact_update: ContactUpdate,
@@ -89,7 +89,7 @@ def update_contact(
     db.refresh(db_contact)
     return db_contact
 
-@router.delete("/{contact_id}")
+@router.delete("/{contact_id}/")
 def delete_contact(contact_id: str, db: Session = Depends(get_db)):
     """Delete a contact"""
     db_contact = db.query(Contact).filter(Contact.id == contact_id).first()
@@ -117,7 +117,7 @@ def search_contacts(
     return contacts
 
 # Interaction endpoints
-@router.post("/{contact_id}/interactions", response_model=InteractionSchema)
+@router.post("/{contact_id}/interactions/", response_model=InteractionSchema)
 def create_interaction(
     contact_id: str,
     interaction: InteractionCreate,
@@ -139,7 +139,7 @@ def create_interaction(
     db.refresh(db_interaction)
     return db_interaction
 
-@router.get("/{contact_id}/interactions", response_model=List[InteractionSchema])
+@router.get("/{contact_id}/interactions/", response_model=List[InteractionSchema])
 def get_contact_interactions(
     contact_id: str,
     db: Session = Depends(get_db)
@@ -152,7 +152,7 @@ def get_contact_interactions(
     interactions = db.query(Interaction).filter(Interaction.contact_id == contact_id).all()
     return interactions
 
-@router.get("/analytics/summary")
+@router.get("/analytics/summary/")
 def get_contact_analytics(db: Session = Depends(get_db)):
     """Get analytics summary for contacts"""
     total_contacts = db.query(Contact).count()
