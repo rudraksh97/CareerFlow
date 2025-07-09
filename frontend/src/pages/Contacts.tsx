@@ -7,6 +7,7 @@ import ContactForm from '@/components/ContactForm'
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('')
   const [contactTypeFilter, setContactTypeFilter] = useState('')
+  const [companyFilter, setCompanyFilter] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingContact, setEditingContact] = useState(null)
   const queryClient = useQueryClient()
@@ -31,6 +32,12 @@ export default function Contacts() {
     }
   })
 
+  const companyOptions = useMemo(() => {
+    if (!contacts) return []
+    const companies = contacts.map((c: any) => c.company) as string[]
+    return [...new Set(companies)].sort()
+  }, [contacts])
+
   // Filter contacts client-side to prevent API calls on every filter change
   const filteredContacts = useMemo(() => {
     if (!contacts) return []
@@ -42,10 +49,11 @@ export default function Contacts() {
         contact.email.toLowerCase().includes(searchTerm.toLowerCase())
       
       const matchesType = !contactTypeFilter || contact.contact_type === contactTypeFilter
+      const matchesCompany = !companyFilter || contact.company === companyFilter
       
-      return matchesSearch && matchesType
+      return matchesSearch && matchesType && matchesCompany
     })
-  }, [contacts, searchTerm, contactTypeFilter])
+  }, [contacts, searchTerm, contactTypeFilter, companyFilter])
 
   const getContactTypeColor = (type: string) => {
     switch (type) {
@@ -63,6 +71,7 @@ export default function Contacts() {
   const handleClearFilters = useCallback(() => {
     setSearchTerm('')
     setContactTypeFilter('')
+    setCompanyFilter('')
   }, [])
 
   const handleAddContact = useCallback(() => {
@@ -109,8 +118,8 @@ export default function Contacts() {
 
       {/* Filters */}
       <div className="card p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
             <input
               type="text"
@@ -130,6 +139,16 @@ export default function Contacts() {
             <option value="recruiter">Recruiter</option>
             <option value="hiring_manager">Hiring Manager</option>
             <option value="other">Other</option>
+          </select>
+          <select
+            value={companyFilter}
+            onChange={(e) => setCompanyFilter(e.target.value)}
+            className="input-field"
+          >
+            <option value="">All Companies</option>
+            {companyOptions.map((company: string) => (
+              <option key={company} value={company}>{company}</option>
+            ))}
           </select>
           <button 
             className="btn btn-secondary"

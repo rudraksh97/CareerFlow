@@ -184,7 +184,7 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content w-full max-w-2xl shadow-xl rounded-3xl flex flex-col max-h-[90vh]" style={{ boxShadow: '0 12px 32px 0 rgb(0 0 0 / 0.10)' }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content w-full max-w-xl shadow-xl rounded-3xl flex flex-col max-h-[90vh]" style={{ boxShadow: '0 12px 32px 0 rgb(0 0 0 / 0.10)' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex-1 overflow-y-auto p-8 pb-0">
           {/* Header */}
           <div className="flex items-center justify-between mb-10">
