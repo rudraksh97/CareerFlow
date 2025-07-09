@@ -16,7 +16,7 @@ def get_profile(db: Session = Depends(get_db)):
     profile = db.query(ProfileModel).filter(ProfileModel.id == PROFILE_ID).first()
     if not profile:
         # Return a default empty profile if none exists
-        return Profile(id=PROFILE_ID, full_name="", email="", headline="", linkedin_url="")
+        return Profile(id=PROFILE_ID, full_name="", email="", headline="", linkedin_url=None)
     return profile
 
 @router.post("/", response_model=Profile)
