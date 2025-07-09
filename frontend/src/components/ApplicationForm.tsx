@@ -38,16 +38,18 @@ const initialFormData: FormData = {
 
 export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
-  const [errors, setErrors] = useState<Partial<FormData & { resume: string }>>({})
+  const [errors, setErrors] = useState<Partial<FormData & { resume: string, cover_letter: string }>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [resumeFileName, setResumeFileName] = useState<string>('')
+  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null)
+  const [coverLetterFileName, setCoverLetterFileName] = useState<string>('')
   const queryClient = useQueryClient()
   const [isFetchingCompanyInfo, setIsFetchingCompanyInfo] = useState(false);
 
 
   const createApplicationMutation = useMutation({
-    mutationFn: async (data: { formData: FormData; file: File }) => {
+    mutationFn: async (data: { formData: FormData; resumeFile: File; coverLetterFile: File | null }) => {
       const formDataToSend = new FormData()
       
       // Add form fields
@@ -57,8 +59,11 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
         }
       })
       
-      // Add file
-      formDataToSend.append('resume', data.file)
+      // Add files
+      formDataToSend.append('resume', data.resumeFile)
+      if (data.coverLetterFile) {
+        formDataToSend.append('cover_letter', data.coverLetterFile)
+      }
       
       return api.post('/applications/', formDataToSend, {
         headers: {
@@ -118,7 +123,7 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
   }, [debouncedCompanyName]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<FormData & { resume: string }> = {}
+    const newErrors: Partial<FormData & { resume: string, cover_letter: string }> = {}
 
     if (!formData.company_name.trim()) {
       newErrors.company_name = 'Company name is required'
@@ -174,7 +179,7 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
     return emailRegex.test(email)
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'resume' | 'cover_letter') => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file type
@@ -182,13 +187,18 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
       const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
       
       if (!allowedTypes.includes(fileExtension)) {
-        setErrors(prev => ({ ...prev, resume: 'Please select a PDF, DOC, or DOCX file' }))
+        setErrors(prev => ({ ...prev, [fileType]: 'Please select a PDF, DOC, or DOCX file' }))
         return
       }
       
-      setResumeFile(file)
-      setResumeFileName(file.name)
-      setErrors(prev => ({ ...prev, resume: undefined }))
+      if (fileType === 'resume') {
+        setResumeFile(file)
+        setResumeFileName(file.name)
+      } else {
+        setCoverLetterFile(file)
+        setCoverLetterFileName(file.name)
+      }
+      setErrors(prev => ({ ...prev, [fileType]: undefined }))
     }
   }
 
@@ -198,7 +208,11 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
 
     setIsSubmitting(true)
     try {
-      await createApplicationMutation.mutateAsync({ formData, file: resumeFile })
+      await createApplicationMutation.mutateAsync({ 
+        formData, 
+        resumeFile, 
+        coverLetterFile 
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -210,6 +224,8 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
     setIsSubmitting(false)
     setResumeFile(null)
     setResumeFileName('')
+    setCoverLetterFile(null)
+    setCoverLetterFileName('')
     onClose()
   }
 
@@ -416,40 +432,73 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
               </div>
             </div>
 
-            {/* Resume Upload */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Resume File *
-              </label>
-              <div className="space-y-4">
+            {/* Resume & Cover Letter Upload */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Resume File *
+                </label>
                 <div className="relative">
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="resume-upload"
-                  />
-                  <label
-                    htmlFor="resume-upload"
-                    className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
-                      errors.resume ? 'border-red-300 bg-red-50' : 'border-neutral-300 hover:border-neutral-400'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
-                      <p className="text-sm text-neutral-600">
-                        {resumeFileName ? resumeFileName : 'Click to upload resume (PDF, DOC, DOCX)'}
-                      </p>
-                      <p className="text-xs text-neutral-500 mt-1">
-                        Max file size: 10MB
-                      </p>
-                    </div>
-                  </label>
-                </div>
-                {errors.resume && (
-                  <p className="text-sm text-red-600">{errors.resume}</p>
-                )}
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => handleFileChange(e, 'resume')}
+                      className="hidden"
+                      id="resume-upload"
+                    />
+                    <label
+                      htmlFor="resume-upload"
+                      className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                        errors.resume ? 'border-red-300 bg-red-50' : 'border-neutral-300 hover:border-neutral-400'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                        <p className="text-sm text-neutral-600">
+                          {resumeFileName ? resumeFileName : 'Click to upload resume'}
+                        </p>
+                        <p className="text-xs text-neutral-500 mt-1">
+                          (PDF, DOC, DOCX)
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  {errors.resume && (
+                    <p className="mt-2 text-sm text-red-600">{errors.resume}</p>
+                  )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Cover Letter File
+                </label>
+                <div className="relative">
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => handleFileChange(e, 'cover_letter')}
+                      className="hidden"
+                      id="cover-letter-upload"
+                    />
+                    <label
+                      htmlFor="cover-letter-upload"
+                      className={`flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                        errors.cover_letter ? 'border-red-300 bg-red-50' : 'border-neutral-300 hover:border-neutral-400'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
+                        <p className="text-sm text-neutral-600">
+                          {coverLetterFileName ? coverLetterFileName : 'Click to upload cover letter'}
+                        </p>
+                        <p className="text-xs text-neutral-500 mt-1">
+                          (Optional)
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  {errors.cover_letter && (
+                    <p className="mt-2 text-sm text-red-600">{errors.cover_letter}</p>
+                  )}
               </div>
             </div>
 

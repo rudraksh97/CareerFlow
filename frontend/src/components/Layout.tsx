@@ -5,9 +5,12 @@ import {
   Users, 
   BarChart3,
   Settings,
+  UserCircle,
+  FileText,
   Menu, 
   X,
-  ChevronRight
+  ChevronRight,
+  User
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,7 +20,13 @@ const navigation = [
   { name: 'Applications', href: '/applications', icon: Briefcase },
   { name: 'Contacts', href: '/contacts', icon: Users },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Resumes', href: '/resumes', icon: FileText },
+  { name: 'Cover Letters', href: '/cover-letters', icon: FileText },
+]
+
+const secondaryNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Profile', href: '/profile', icon: UserCircle },
 ]
 
 function PatsLogo() {
@@ -79,6 +88,30 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 )
               })}
             </ul>
+            <hr className="my-4 border-neutral-200/80" />
+            <ul className="space-y-2">
+              {secondaryNavigation.map((item) => {
+                const isActive = location.pathname === item.href
+                return (
+                  <li key={item.name}>
+                    <Link
+                      to={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                        isActive
+                          ? 'bg-primary-50 text-primary-700'
+                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                      }`}
+                    >
+                      <item.icon className={`mr-3 h-5 w-5 ${
+                        isActive ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'
+                      }`} />
+                      {item.name}
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
           </nav>
         </div>
       </div>
@@ -90,32 +123,53 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <PatsLogo />
           </div>
           <nav className="flex flex-1 flex-col">
-            <ul className="flex flex-1 flex-col gap-y-1">
+            <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
-                <ul className="space-y-1">
-                  {navigation.map((item) => {
-                    const isActive = location.pathname === item.href
-                    return (
-                      <li key={item.name}>
-                        <Link
-                          to={item.href}
-                          className={`group flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-semibold leading-6 transition-all duration-200 ${
-                            isActive
-                              ? 'bg-primary-50 text-primary-700'
-                              : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                <ul role="list" className="-mx-2 space-y-1">
+                  {navigation.map((item) => (
+                    <li key={item.name}>
+                      <Link
+                        to={item.href}
+                        className={`group flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-semibold leading-6 transition-all duration-200 ${
+                          location.pathname === item.href
+                            ? 'bg-primary-50 text-primary-700'
+                            : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                        }`}
+                      >
+                        <item.icon
+                          className={`h-5 w-5 shrink-0 ${
+                            location.pathname === item.href ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'
                           }`}
-                        >
-                          <item.icon className={`h-5 w-5 shrink-0 ${
-                            isActive ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'
-                          }`} />
-                          {item.name}
-                          {isActive && (
-                            <div className="ml-auto h-2 w-2 rounded-full bg-primary-600" />
-                          )}
-                        </Link>
-                      </li>
-                    )
-                  })}
+                          aria-hidden="true"
+                        />
+                        {item.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+              <li className="mt-auto">
+                <ul role="list" className="-mx-2 space-y-1">
+                  {secondaryNavigation.map((item) => (
+                     <li key={item.name}>
+                     <Link
+                       to={item.href}
+                       className={`group flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-semibold leading-6 transition-all duration-200 ${
+                         location.pathname === item.href
+                           ? 'bg-primary-50 text-primary-700'
+                           : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                       }`}
+                     >
+                       <item.icon
+                         className={`h-5 w-5 shrink-0 ${
+                          location.pathname === item.href ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'
+                         }`}
+                         aria-hidden="true"
+                       />
+                       {item.name}
+                     </Link>
+                   </li>
+                  ))}
                 </ul>
               </li>
             </ul>

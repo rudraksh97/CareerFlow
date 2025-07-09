@@ -25,15 +25,18 @@ router = APIRouter()
 UPLOADS_DIR = Path("uploads/resumes")
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
+COVER_LETTERS_DIR = Path("uploads/cover_letters")
+COVER_LETTERS_DIR.mkdir(parents=True, exist_ok=True)
+
 def generate_id():
     return str(uuid.uuid4())
 
-def save_resume_file(file: UploadFile, application_id: str) -> tuple[str, str]:
-    """Save resume file and return filename and file path"""
+def save_upload_file(file: UploadFile, application_id: str, upload_dir: Path) -> tuple[str, str]:
+    """Save upload file and return filename and file path"""
     # Generate unique filename
     file_extension = Path(file.filename).suffix if file.filename else '.pdf'
     filename = f"{application_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}{file_extension}"
-    file_path = UPLOADS_DIR / filename
+    file_path = upload_dir / filename
     
     # Save file
     with open(file_path, "wb") as buffer:
@@ -55,6 +58,7 @@ async def create_application(
     notes: Optional[str] = Form(None),
     max_applications: Optional[str] = Form(None),
     resume: UploadFile = File(...),
+    cover_letter: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     """Create a new job application with resume file upload"""
@@ -72,8 +76,20 @@ async def create_application(
     application_id = generate_id()
     
     # Save resume file
-    filename, file_path = save_resume_file(resume, application_id)
-    
+    resume_filename, resume_file_path = save_upload_file(resume, application_id, UPLOADS_DIR)
+
+    # Save cover letter file if provided
+    cover_letter_filename = None
+    cover_letter_file_path = None
+    if cover_letter and cover_letter.filename:
+        # Validate file type for cover letter
+        if Path(cover_letter.filename).suffix.lower() not in allowed_extensions:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid cover letter file type. Allowed: {', '.join(allowed_extensions)}"
+            )
+        cover_letter_filename, cover_letter_file_path = save_upload_file(cover_letter, application_id, COVER_LETTERS_DIR)
+
     # Create application
     db_application = Application(
         id=application_id,
@@ -85,8 +101,10 @@ async def create_application(
         status=status,
         date_applied=date_applied,
         email_used=email_used,
-        resume_filename=filename,
-        resume_file_path=file_path,
+        resume_filename=resume_filename,
+        resume_file_path=resume_file_path,
+        cover_letter_filename=cover_letter_filename,
+        cover_letter_file_path=cover_letter_file_path,
         source=source,
         notes=notes,
         max_applications=max_applications
@@ -111,6 +129,23 @@ async def download_resume(application_id: str, db: Session = Depends(get_db)):
     return FileResponse(
         path=file_path,
         filename=application.resume_filename,
+        media_type='application/octet-stream'
+    )
+
+@router.get("/{application_id}/cover-letter")
+async def download_cover_letter(application_id: str, db: Session = Depends(get_db)):
+    """Download cover letter file for an application"""
+    application = db.query(Application).filter(Application.id == application_id).first()
+    if application is None or not application.cover_letter_file_path:
+        raise HTTPException(status_code=404, detail="Cover letter not found")
+    
+    file_path = Path(application.cover_letter_file_path)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Cover letter file not found")
+    
+    return FileResponse(
+        path=file_path,
+        filename=application.cover_letter_filename,
         media_type='application/octet-stream'
     )
 

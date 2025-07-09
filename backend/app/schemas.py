@@ -16,6 +16,8 @@ class ApplicationBase(BaseModel):
     email_used: str
     resume_filename: str
     resume_file_path: str
+    cover_letter_filename: Optional[str] = None
+    cover_letter_file_path: Optional[str] = None
     source: ApplicationSource
     notes: Optional[str] = None
     max_applications: Optional[str] = None
@@ -34,6 +36,8 @@ class ApplicationUpdate(BaseModel):
     email_used: Optional[str] = None
     resume_filename: Optional[str] = None
     resume_file_path: Optional[str] = None
+    cover_letter_filename: Optional[str] = None
+    cover_letter_file_path: Optional[str] = None
     source: Optional[ApplicationSource] = None
     notes: Optional[str] = None
     max_applications: Optional[str] = None
@@ -136,5 +140,24 @@ class SettingCreate(SettingBase):
     pass
 
 class Setting(SettingBase):
+    class Config:
+        from_attributes = True
+
+# Profile Schemas
+class ProfileBase(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    headline: Optional[str] = None
+    linkedin_url: Optional[HttpUrl] = None
+
+class ProfileCreate(ProfileBase):
+    pass
+
+class ProfileUpdate(ProfileBase):
+    pass
+
+class Profile(ProfileBase):
+    id: int
+
     class Config:
         from_attributes = True 

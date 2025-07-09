@@ -26,7 +26,7 @@ class Application(Base):
     id = Column(String, primary_key=True, index=True)
     company_name = Column(String, nullable=False, index=True)
     job_title = Column(String, nullable=False)
-    job_id = Column(String, nullable=False)
+    job_id = Column(String, nullable=False, unique=True)
     job_url = Column(String, nullable=False)
     portal_url = Column(String, nullable=True)
     status = Column(Enum(ApplicationStatus), default=ApplicationStatus.APPLIED, index=True)
@@ -34,6 +34,8 @@ class Application(Base):
     email_used = Column(String, nullable=False)
     resume_filename = Column(String, nullable=False)  # Store the filename
     resume_file_path = Column(String, nullable=False)  # Store the file path
+    cover_letter_filename = Column(String, nullable=True)
+    cover_letter_file_path = Column(String, nullable=True)
     source = Column(Enum(ApplicationSource), nullable=False, index=True)
     notes = Column(Text, nullable=True)
     max_applications = Column(String, nullable=True)  # For tracking limits
