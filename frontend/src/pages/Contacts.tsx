@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Filter, User, Linkedin } from 'lucide-react'
+import { Plus, Search, Filter, User, Linkedin, Edit, Trash2 } from 'lucide-react'
 import { api } from '@/services/api'
 import ContactForm from '@/components/ContactForm'
+import { motion } from 'framer-motion'
 
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -55,6 +56,19 @@ export default function Contacts() {
     })
   }, [contacts, searchTerm, contactTypeFilter, companyFilter])
 
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      'bg-blue-100 text-blue-600',
+      'bg-emerald-100 text-emerald-600',
+      'bg-amber-100 text-amber-600',
+      'bg-indigo-100 text-indigo-600',
+      'bg-rose-100 text-rose-600',
+      'bg-pink-100 text-pink-600',
+    ]
+    const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+    return colors[charCodeSum % colors.length]
+  }
+
   const getContactTypeColor = (type: string) => {
     switch (type) {
       case 'referral':
@@ -90,6 +104,21 @@ export default function Contacts() {
     }
   }, [deleteContactMutation])
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -100,9 +129,14 @@ export default function Contacts() {
   }
 
   return (
-    <div className="space-y-8">
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-neutral-900">Contacts</h1>
           <p className="text-neutral-600">Manage your professional contacts</p>
@@ -114,10 +148,10 @@ export default function Contacts() {
           <Plus className="h-4 w-4 mr-2" />
           Add Contact
         </button>
-      </div>
+      </motion.div>
 
       {/* Filters */}
-      <div className="card p-6">
+      <motion.div variants={itemVariants} className="card p-6">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative md:col-span-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
@@ -158,55 +192,53 @@ export default function Contacts() {
             Clear Filters
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Contacts List */}
-      <div className="card overflow-hidden">
+      <motion.div variants={itemVariants} className="card overflow-hidden">
         {filteredContacts?.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Contact</th>
+                  <th className="w-2/5">Contact</th>
                   <th>Company</th>
                   <th>Type</th>
                   <th>LinkedIn</th>
-                  <th>Actions</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredContacts?.map((contact: any) => (
                   <tr key={contact.id} className="group">
                     <td>
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                          <span className="text-sm font-medium text-gray-700">
-                            {contact.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                          </span>
+                      <div className="flex items-center gap-4">
+                        <div className={`h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-sm ${getAvatarColor(contact.name)}`}>
+                          {contact.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-neutral-900">
+                          <div className="font-semibold text-neutral-800">
                             {contact.name}
                           </div>
                           <div className="text-sm text-neutral-500">
                             {contact.email}
                           </div>
-                          {contact.role && (
-                            <div className="text-sm text-neutral-400">
-                              {contact.role}
-                            </div>
-                          )}
                         </div>
                       </div>
                     </td>
                     <td>
-                      <div className="text-sm text-neutral-900">
+                      <div className="text-sm text-neutral-800 font-medium">
                         {contact.company}
                       </div>
+                      {contact.role && (
+                        <div className="text-xs text-neutral-500">
+                          {contact.role}
+                        </div>
+                      )}
                     </td>
                     <td>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getContactTypeColor(contact.contact_type)}`}>
-                        {contact.contact_type.replace('_', ' ')}
+                      <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${getContactTypeColor(contact.contact_type)}`}>
+                        {contact.contact_type.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td>
@@ -221,22 +253,24 @@ export default function Contacts() {
                           <Linkedin className="h-5 w-5" />
                         </a>
                       ) : (
-                        <span className="text-neutral-300">—</span>
+                        <span className="text-neutral-400">—</span>
                       )}
                     </td>
-                    <td>
-                      <div className="flex items-center space-x-2">
+                    <td className="text-right">
+                      <div className="flex items-center justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => handleEditContact(contact)}
-                          className="p-2 text-neutral-400 hover:text-neutral-600 transition-colors"
+                          className="p-2 text-neutral-500 hover:text-primary-600 transition-colors"
+                          title="Edit Contact"
                         >
-                          Edit
+                          <Edit className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteContact(contact.id)}
-                          className="p-2 text-neutral-400 hover:text-red-600 transition-colors"
+                          className="p-2 text-neutral-500 hover:text-rose-600 transition-colors"
+                          title="Delete Contact"
                         >
-                          Delete
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
@@ -246,31 +280,22 @@ export default function Contacts() {
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16">
-            <div className="p-4 rounded-full bg-neutral-100 w-16 h-16 mb-4 flex items-center justify-center">
-              <User className="h-8 w-8 text-neutral-400" />
+          <div className="flex flex-col items-center justify-center text-center py-16">
+            <div className="p-3 rounded-full bg-primary-100 border-8 border-primary-50 mb-4">
+              <User className="h-8 w-8 text-primary-600" />
             </div>
-            <h3 className="text-lg font-medium text-neutral-900 mb-2">
-              {contacts?.length === 0 ? 'No contacts found' : 'No contacts match your filters'}
+            <h3 className="text-lg font-semibold text-neutral-800 mb-1">
+              {contacts?.length === 0 ? 'No contacts yet' : 'No contacts match filters'}
             </h3>
-            <p className="text-neutral-600 mb-6">
+            <p className="text-neutral-600 max-w-sm">
               {contacts?.length === 0 
-                ? 'Start adding your professional contacts to see them here.'
-                : 'Try adjusting your search criteria.'
+                ? 'Add your professional contacts to keep track of your network.'
+                : 'Try adjusting your search or filter criteria to find what you\'re looking for.'
               }
             </p>
-            {contacts?.length === 0 && (
-              <button 
-                className="btn btn-primary"
-                onClick={handleAddContact}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Contact
-              </button>
-            )}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Contact Form Modal */}
       <ContactForm 
@@ -278,6 +303,6 @@ export default function Contacts() {
         onClose={() => setIsFormOpen(false)} 
         contact={editingContact}
       />
-    </div>
+    </motion.div>
   )
 } 

@@ -134,7 +134,13 @@ def get_applications(
     applications = query.offset(skip).limit(limit).all()
     return applications
 
-@router.get("/{application_id}", response_model=ApplicationSchema)
+@router.get("/recent/", response_model=List[ApplicationSchema])
+def get_recent_applications(db: Session = Depends(get_db)):
+    """Get the 5 most recent applications"""
+    applications = db.query(Application).order_by(Application.created_at.desc()).limit(5).all()
+    return applications
+
+@router.get("/{application_id}/", response_model=ApplicationSchema)
 def get_application(application_id: str, db: Session = Depends(get_db)):
     """Get a specific application by ID"""
     application = db.query(Application).filter(Application.id == application_id).first()

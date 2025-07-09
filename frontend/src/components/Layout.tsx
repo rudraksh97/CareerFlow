@@ -9,6 +9,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
@@ -19,18 +20,13 @@ const navigation = [
 
 function PatsLogo() {
   return (
-    <div className="flex items-center gap-2 select-none">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="2" y="2" width="24" height="24" rx="7" fill="url(#pats-gradient)" />
-        <path d="M9 19V9h4.5a3.5 3.5 0 1 1 0 7H9" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        <defs>
-          <linearGradient id="pats-gradient" x1="2" y1="2" x2="26" y2="26" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#3b82f6" />
-            <stop offset="1" stopColor="#6366f1" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <span className="text-2xl font-extrabold text-gradient tracking-tight">PATS</span>
+    <div className="flex items-center gap-3 select-none">
+      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 shadow-md">
+        <svg width="16" height="16" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 19V9h4.5a3.5 3.5 0 1 1 0 7H9" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+      <span className="text-2xl font-extrabold text-neutral-800 tracking-tighter">PATS</span>
     </div>
   )
 }
@@ -45,7 +41,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-          <div className="flex h-16 items-center justify-between px-6 border-b border-neutral-200">
+          <div className="flex h-16 items-center justify-between px-6 border-b border-neutral-200/80">
             <PatsLogo />
             <button
               onClick={() => setSidebarOpen(false)}
@@ -63,18 +59,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     <Link
                       to={item.href}
                       onClick={() => setSidebarOpen(false)}
-                      className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                         isActive
-                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200/50'
+                          ? 'bg-primary-50 text-primary-700'
                           : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
                       }`}
                     >
                       <item.icon className={`mr-3 h-5 w-5 ${
-                        isActive ? 'text-blue-600' : 'text-neutral-400 group-hover:text-neutral-600'
+                        isActive ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'
                       }`} />
                       {item.name}
                       {isActive && (
-                        <ChevronRight className="ml-auto h-4 w-4 text-blue-600" />
+                        <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary-600" />
                       )}
                     </Link>
                   </li>
@@ -86,33 +82,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white border-r border-neutral-200 px-6 pb-4">
-          <div className="flex h-16 shrink-0 items-center">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white/95 backdrop-blur-lg border-r border-neutral-200/80 px-4 pb-4">
+          <div className="flex h-20 shrink-0 items-center px-2">
             <PatsLogo />
           </div>
           <nav className="flex flex-1 flex-col">
-            <ul className="flex flex-1 flex-col gap-y-7">
+            <ul className="flex flex-1 flex-col gap-y-1">
               <li>
-                <ul className="-mx-2 space-y-1">
+                <ul className="space-y-1">
                   {navigation.map((item) => {
                     const isActive = location.pathname === item.href
                     return (
                       <li key={item.name}>
                         <Link
                           to={item.href}
-                          className={`group flex items-center gap-x-3 rounded-xl px-3 py-2.5 text-sm font-semibold leading-6 transition-all duration-200 ${
+                          className={`group flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-semibold leading-6 transition-all duration-200 ${
                             isActive
-                              ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border border-blue-200/50 shadow-sm'
-                              : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50'
+                              ? 'bg-primary-50 text-primary-700'
+                              : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
                           }`}
                         >
                           <item.icon className={`h-5 w-5 shrink-0 ${
-                            isActive ? 'text-blue-600' : 'text-neutral-400 group-hover:text-neutral-600'
+                            isActive ? 'text-primary-600' : 'text-neutral-400 group-hover:text-neutral-600'
                           }`} />
                           {item.name}
                           {isActive && (
-                            <ChevronRight className="ml-auto h-4 w-4 text-blue-600" />
+                            <div className="ml-auto h-2 w-2 rounded-full bg-primary-600" />
                           )}
                         </Link>
                       </li>
@@ -126,9 +122,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-72">
+      <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-neutral-200 bg-white/80 backdrop-blur-sm px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 bg-white/80 backdrop-blur-lg px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
           <button
             type="button"
             className="-m-2.5 p-2.5 text-neutral-700 lg:hidden"
@@ -145,11 +141,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main className="py-8">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
+        <AnimatePresence mode="wait">
+          <motion.main
+            key={location.pathname}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              {children}
+            </div>
+          </motion.main>
+        </AnimatePresence>
       </div>
     </div>
   )
