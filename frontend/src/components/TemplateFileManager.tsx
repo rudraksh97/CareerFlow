@@ -265,15 +265,17 @@ const TemplateFileManager: React.FC<TemplateFileManagerProps> = ({ fileType, tit
               <FileText className='h-6 w-6 text-neutral-400' />
             </div>
             <p className='text-neutral-600 text-sm mb-4'>No template {title.toLowerCase()} yet</p>
-            <motion.button
-              onClick={() => setIsUploadModalOpen(true)}
-              className='btn-primary text-sm'
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Plus className='h-4 w-4 mr-2' />
-              Add First Template
-            </motion.button>
+            <div className='flex justify-center'>
+              <motion.button
+                onClick={() => setIsUploadModalOpen(true)}
+                className='btn-primary text-sm'
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Plus className='h-4 w-4 mr-2' />
+                Add First Template
+              </motion.button>
+            </div>
           </div>
         </div>
       )}
