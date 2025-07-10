@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Generated files
+*.generated.*
+*.min.js
+*.min.css
+
+# Configuration files that shouldn't be formatted
+.eslintrc
+.eslintrc.*
+package-lock.json
+yarn.lock
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation that should preserve formatting
+CHANGELOG.md
+LICENSE 

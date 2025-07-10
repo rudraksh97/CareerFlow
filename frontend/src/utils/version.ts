@@ -14,7 +14,7 @@ export interface VersionInfo {
 }
 
 // Frontend version (should match the version in version.json)
-export const FRONTEND_VERSION = "1.0.0";
+export const FRONTEND_VERSION = '1.0.0';
 
 // API base URL for version endpoint
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -34,16 +34,16 @@ export async function fetchVersionInfo(): Promise<VersionInfo> {
     // Return fallback version info
     return {
       version: FRONTEND_VERSION,
-      name: "Personal Application Tracking System (PATS)",
-      description: "A comprehensive system to track job applications and manage contacts",
-      api_version: "v1",
-      release_date: "",
+      name: 'Personal Application Tracking System (PATS)',
+      description: 'A comprehensive system to track job applications and manage contacts',
+      api_version: 'v1',
+      release_date: '',
       build_info: {
-        commit_hash: "unknown",
-        branch: "unknown",
-        build_date: new Date().toISOString()
+        commit_hash: 'unknown',
+        branch: 'unknown',
+        build_date: new Date().toISOString(),
       },
-      environment: "development"
+      environment: 'development',
     };
   }
 }
@@ -74,4 +74,4 @@ export function isDevelopment(): boolean {
  */
 export function getBuildEnvironment(): string {
   return import.meta.env.MODE || 'development';
-} 
+}

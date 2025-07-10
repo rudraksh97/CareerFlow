@@ -1,26 +1,23 @@
-import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  Plus, 
-  Search, 
- 
-  Edit, 
-  Trash2, 
-  Copy, 
-  Play, 
+import { motion } from 'framer-motion';
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Copy,
+  Play,
   MessageSquare,
   Users,
   Mail,
-  EyeOff
+  EyeOff,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { api } from '@/services/api';
-import { 
-  ReferralMessage, 
-  ReferralMessageType
-} from '@/types';
-import ReferralMessageForm from '@/components/ReferralMessageForm';
+import { useState, useMemo, useCallback } from 'react';
+
 import MessageGenerator from '@/components/MessageGenerator';
+import ReferralMessageForm from '@/components/ReferralMessageForm';
+import { api } from '@/services/api';
+import { ReferralMessage, ReferralMessageType } from '@/types';
 
 const ReferralMessages = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +27,6 @@ const ReferralMessages = () => {
   const [editingMessage, setEditingMessage] = useState<ReferralMessage | null>(null);
   const [generatingMessage, setGeneratingMessage] = useState<ReferralMessage | null>(null);
 
-  
   const queryClient = useQueryClient();
 
   // Fetch referral messages
@@ -49,7 +45,7 @@ const ReferralMessages = () => {
     onError: (error: any) => {
       console.error('Error deleting message:', error);
       alert('Failed to delete message. Please try again.');
-    }
+    },
   });
 
   // Duplicate mutation
@@ -61,24 +57,24 @@ const ReferralMessages = () => {
     onError: (error: any) => {
       console.error('Error duplicating message:', error);
       alert('Failed to duplicate message. Please try again.');
-    }
+    },
   });
-
-
 
   // Filter messages
   const filteredMessages = useMemo(() => {
     if (!messages) return [];
-    
-    return messages.filter((message) => {
-      const matchesSearch = !searchTerm || 
+
+    return messages.filter(message => {
+      const matchesSearch =
+        !searchTerm ||
         message.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         message.message_template.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (message.target_company && message.target_company.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+        (message.target_company &&
+          message.target_company.toLowerCase().includes(searchTerm.toLowerCase()));
+
       const matchesType = !typeFilter || message.message_type === typeFilter;
       const matchesActive = activeFilter === '' || message.is_active === activeFilter;
-      
+
       return matchesSearch && matchesType && matchesActive;
     });
   }, [messages, searchTerm, typeFilter, activeFilter]);
@@ -94,15 +90,21 @@ const ReferralMessages = () => {
     setIsFormOpen(true);
   }, []);
 
-  const handleDeleteMessage = useCallback((messageId: string) => {
-    if (window.confirm('Are you sure you want to delete this referral message template?')) {
-      deleteMessageMutation.mutate(messageId);
-    }
-  }, [deleteMessageMutation]);
+  const handleDeleteMessage = useCallback(
+    (messageId: string) => {
+      if (window.confirm('Are you sure you want to delete this referral message template?')) {
+        deleteMessageMutation.mutate(messageId);
+      }
+    },
+    [deleteMessageMutation],
+  );
 
-  const handleDuplicateMessage = useCallback((messageId: string) => {
-    duplicateMessageMutation.mutate(messageId);
-  }, [duplicateMessageMutation]);
+  const handleDuplicateMessage = useCallback(
+    (messageId: string) => {
+      duplicateMessageMutation.mutate(messageId);
+    },
+    [duplicateMessageMutation],
+  );
 
   const handleGenerateMessage = useCallback((message: ReferralMessage) => {
     setGeneratingMessage(message);
@@ -119,7 +121,10 @@ const ReferralMessages = () => {
 
   // Format message type for display
   const formatMessageType = (type: ReferralMessageType) => {
-    return type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    return type
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const getTypeColor = (type: ReferralMessageType) => {
@@ -145,82 +150,83 @@ const ReferralMessages = () => {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
     },
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loading"></div>
-        <span className="ml-3 text-neutral-600">Loading referral messages...</span>
+      <div className='flex items-center justify-center h-64'>
+        <div className='loading' />
+        <span className='ml-3 text-neutral-600'>Loading referral messages...</span>
       </div>
     );
   }
 
   return (
-    <motion.div 
-      className="space-y-8"
+    <motion.div
+      className='space-y-8'
       variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      initial='hidden'
+      animate='visible'
     >
       {/* Header */}
-      <motion.div 
-        variants={itemVariants} 
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      <motion.div
+        variants={itemVariants}
+        className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'
       >
         <div>
-          <h1 className="text-3xl font-bold gradient-text">Referral Messages</h1>
-          <p className="text-neutral-600 mt-1">Create and manage personalized referral message templates</p>
+          <h1 className='text-3xl font-bold gradient-text'>Referral Messages</h1>
+          <p className='text-neutral-600 mt-1'>
+            Create and manage personalized referral message templates
+          </p>
         </div>
-        <button 
-          className="btn-primary"
-          onClick={handleAddMessage}
-        >
-          <Plus className="h-4 w-4 mr-2" />
+        <button className='btn-primary' onClick={handleAddMessage}>
+          <Plus className='h-4 w-4 mr-2' />
           Create Template
         </button>
       </motion.div>
 
       {/* Filters */}
-      <motion.div variants={itemVariants} className="card p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-4 w-4" />
+      <motion.div variants={itemVariants} className='card p-6'>
+        <div className='flex flex-col sm:flex-row gap-4'>
+          <div className='flex-1'>
+            <div className='relative'>
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 h-4 w-4' />
               <input
-                type="text"
-                placeholder="Search templates..."
+                type='text'
+                placeholder='Search templates...'
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="form-input pl-10"
+                onChange={e => setSearchTerm(e.target.value)}
+                className='form-input pl-10'
               />
             </div>
           </div>
-          <div className="flex gap-3">
-            <select 
+          <div className='flex gap-3'>
+            <select
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value as ReferralMessageType | '')}
-              className="form-input"
+              onChange={e => setTypeFilter(e.target.value as ReferralMessageType | '')}
+              className='form-input'
             >
-              <option value="">All Types</option>
+              <option value=''>All Types</option>
               {Object.values(ReferralMessageType).map(type => (
                 <option key={type} value={type}>
                   {formatMessageType(type)}
                 </option>
               ))}
             </select>
-            <select 
+            <select
               value={activeFilter.toString()}
-              onChange={(e) => setActiveFilter(e.target.value === '' ? '' : e.target.value === 'true')}
-              className="form-input"
+              onChange={e =>
+                setActiveFilter(e.target.value === '' ? '' : e.target.value === 'true')
+              }
+              className='form-input'
             >
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value=''>All Status</option>
+              <option value='true'>Active</option>
+              <option value='false'>Inactive</option>
             </select>
           </div>
         </div>
@@ -229,53 +235,55 @@ const ReferralMessages = () => {
       {/* Messages Grid */}
       <motion.div variants={itemVariants}>
         {filteredMessages.length === 0 ? (
-          <motion.div 
-            className="card p-12 text-center"
+          <motion.div
+            className='card p-12 text-center'
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <MessageSquare className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-neutral-700 mb-2">No referral message templates</h3>
-            <p className="text-neutral-500 max-w-md mx-auto">
-              {searchTerm || typeFilter || activeFilter !== '' 
-                ? 'No templates match your current filters. Try adjusting your search criteria.' 
+            <MessageSquare className='h-12 w-12 text-neutral-400 mx-auto mb-4' />
+            <h3 className='text-lg font-semibold text-neutral-700 mb-2'>
+              No referral message templates
+            </h3>
+            <p className='text-neutral-500 max-w-md mx-auto'>
+              {searchTerm || typeFilter || activeFilter !== ''
+                ? 'No templates match your current filters. Try adjusting your search criteria.'
                 : 'Create your first referral message template to get started with personalized outreach.'}
             </p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6'>
             {filteredMessages.map((message, index) => (
-                              <motion.div
-                  key={message.id}
-                  className={`card-interactive p-6 group ${
-                    !message.is_active ? 'opacity-60' : ''
-                  }`}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.5, 
-                    delay: index * 0.1,
-                    ease: "easeOut"
-                  }}
-                >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-neutral-900 truncate group-hover:text-blue-600 transition-colors duration-200">
+              <motion.div
+                key={message.id}
+                className={`card-interactive p-6 group ${!message.is_active ? 'opacity-60' : ''}`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.5,
+                  delay: index * 0.1,
+                  ease: 'easeOut',
+                }}
+              >
+                <div className='flex items-start justify-between mb-4'>
+                  <div className='flex-1'>
+                    <div className='flex items-center gap-2 mb-2'>
+                      <h3 className='font-semibold text-neutral-900 truncate group-hover:text-blue-600 transition-colors duration-200'>
                         {message.title}
                       </h3>
-                      {!message.is_active && <EyeOff className="h-4 w-4 text-neutral-400" />}
+                      {!message.is_active && <EyeOff className='h-4 w-4 text-neutral-400' />}
                     </div>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getTypeColor(message.message_type)}`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getTypeColor(message.message_type)}`}
+                    >
                       {formatMessageType(message.message_type)}
                     </span>
                   </div>
                 </div>
 
                 {/* Message preview */}
-                <div className="mb-4">
-                  <p className="text-sm text-neutral-600 line-clamp-3 leading-relaxed">
+                <div className='mb-4'>
+                  <p className='text-sm text-neutral-600 line-clamp-3 leading-relaxed'>
                     {message.message_template.substring(0, 150)}
                     {message.message_template.length > 150 ? '...' : ''}
                   </p>
@@ -283,16 +291,16 @@ const ReferralMessages = () => {
 
                 {/* Target info */}
                 {(message.target_company || message.target_position) && (
-                  <div className="mb-4 space-y-1">
+                  <div className='mb-4 space-y-1'>
                     {message.target_company && (
-                      <div className="flex items-center gap-2 text-xs text-neutral-500">
-                        <Users className="h-3 w-3" />
+                      <div className='flex items-center gap-2 text-xs text-neutral-500'>
+                        <Users className='h-3 w-3' />
                         <span>{message.target_company}</span>
                       </div>
                     )}
                     {message.target_position && (
-                      <div className="flex items-center gap-2 text-xs text-neutral-500">
-                        <Mail className="h-3 w-3" />
+                      <div className='flex items-center gap-2 text-xs text-neutral-500'>
+                        <Mail className='h-3 w-3' />
                         <span>{message.target_position}</span>
                       </div>
                     )}
@@ -300,41 +308,41 @@ const ReferralMessages = () => {
                 )}
 
                 {/* Usage count */}
-                <div className="text-xs text-neutral-500 mb-4 flex items-center gap-1">
-                  <Play className="h-3 w-3" />
+                <div className='text-xs text-neutral-500 mb-4 flex items-center gap-1'>
+                  <Play className='h-3 w-3' />
                   Used {message.usage_count} times
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   <button
                     onClick={() => handleGenerateMessage(message)}
-                    className="flex-1 btn-accent text-xs py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className='flex-1 btn-accent text-xs py-2 disabled:opacity-50 disabled:cursor-not-allowed'
                     disabled={!message.is_active}
                   >
-                    <Play className="h-3 w-3 mr-1" />
+                    <Play className='h-3 w-3 mr-1' />
                     Generate
                   </button>
                   <button
                     onClick={() => handleEditMessage(message)}
-                    className="btn-secondary p-2 focus-ring"
-                    title="Edit template"
+                    className='btn-secondary p-2 focus-ring'
+                    title='Edit template'
                   >
-                    <Edit className="h-3 w-3" />
+                    <Edit className='h-3 w-3' />
                   </button>
                   <button
                     onClick={() => handleDuplicateMessage(message.id)}
-                    className="btn-secondary p-2 focus-ring"
-                    title="Duplicate template"
+                    className='btn-secondary p-2 focus-ring'
+                    title='Duplicate template'
                   >
-                    <Copy className="h-3 w-3" />
+                    <Copy className='h-3 w-3' />
                   </button>
                   <button
                     onClick={() => handleDeleteMessage(message.id)}
-                    className="btn-secondary p-2 text-red-600 hover:bg-red-50 hover:text-red-700 focus-ring"
-                    title="Delete template"
+                    className='btn-secondary p-2 text-red-600 hover:bg-red-50 hover:text-red-700 focus-ring'
+                    title='Delete template'
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className='h-3 w-3' />
                   </button>
                 </div>
               </motion.div>
@@ -349,7 +357,7 @@ const ReferralMessages = () => {
         onClose={handleCloseForm}
         editingMessage={editingMessage}
       />
-      
+
       <MessageGenerator
         isOpen={!!generatingMessage}
         onClose={handleCloseGenerate}
@@ -359,4 +367,4 @@ const ReferralMessages = () => {
   );
 };
 
-export default ReferralMessages; 
+export default ReferralMessages;

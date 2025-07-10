@@ -1,17 +1,17 @@
 // Application Priority Types
 export enum ApplicationPriority {
-  LOW = "low",
-  MEDIUM = "medium",
-  HIGH = "high"
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
 }
 
 // Referral Message Types
 export enum ReferralMessageType {
-  COLD_OUTREACH = "cold_outreach",
-  WARM_INTRODUCTION = "warm_introduction", 
-  FOLLOW_UP = "follow_up",
-  THANK_YOU = "thank_you",
-  NETWORKING = "networking"
+  COLD_OUTREACH = 'cold_outreach',
+  WARM_INTRODUCTION = 'warm_introduction',
+  FOLLOW_UP = 'follow_up',
+  THANK_YOU = 'thank_you',
+  NETWORKING = 'networking',
 }
 
 export interface ReferralMessage {
@@ -108,4 +108,4 @@ export interface Contact {
   notes?: string;
   created_at: string;
   updated_at: string;
-} 
+}

@@ -9,7 +9,15 @@
 
   body {
     @apply bg-neutral-50 text-neutral-900 antialiased;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
   }
 
   html {
@@ -300,4 +308,4 @@
   .no-print {
     display: none !important;
   }
-} 
+}

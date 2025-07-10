@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Save, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { X, Save, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
 import { api } from '@/services/api';
-import { 
-  ReferralMessage, 
-  ReferralMessageType, 
+import {
+  ReferralMessage,
+  ReferralMessageType,
   ReferralMessageCreate,
-  ReferralMessageUpdate
+  ReferralMessageUpdate,
 } from '@/types';
 
 interface ReferralMessageFormProps {
@@ -25,7 +26,7 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
     target_company: '',
     target_position: '',
     is_active: true,
-    notes: ''
+    notes: '',
   });
 
   const queryClient = useQueryClient();
@@ -42,7 +43,7 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
           target_company: editingMessage.target_company || '',
           target_position: editingMessage.target_position || '',
           is_active: editingMessage.is_active,
-          notes: editingMessage.notes || ''
+          notes: editingMessage.notes || '',
         });
       } else {
         setFormData({
@@ -53,7 +54,7 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
           target_company: '',
           target_position: '',
           is_active: true,
-          notes: ''
+          notes: '',
         });
       }
     }
@@ -69,12 +70,12 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
     onError: (error: any) => {
       console.error('Error creating template:', error);
       alert('Failed to create template. Please try again.');
-    }
+    },
   });
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ReferralMessageUpdate }) => 
+    mutationFn: ({ id, data }: { id: string; data: ReferralMessageUpdate }) =>
       api.put(`/referral-messages/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referral-messages'] });
@@ -83,12 +84,12 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
     onError: (error: any) => {
       console.error('Error updating template:', error);
       alert('Failed to update template. Please try again.');
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim() || !formData.message_template.trim()) {
       alert('Please fill in the required fields (Title and Message Template).');
       return;
@@ -106,64 +107,65 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
   };
 
   const formatMessageType = (type: ReferralMessageType) => {
-    return type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    return type
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, l => l.toUpperCase());
   };
 
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className='modal-overlay' onClick={onClose}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          onClick={(e) => e.stopPropagation()}
-          className="modal-content max-w-2xl max-h-[90vh] overflow-y-auto"
+          onClick={e => e.stopPropagation()}
+          className='modal-content max-w-2xl max-h-[90vh] overflow-y-auto'
         >
-          <form onSubmit={handleSubmit} className="p-6">
+          <form onSubmit={handleSubmit} className='p-6'>
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="h-6 w-6 text-primary-600" />
-                <h2 className="text-2xl font-bold text-neutral-900">
+            <div className='flex items-center justify-between mb-6'>
+              <div className='flex items-center gap-3'>
+                <MessageSquare className='h-6 w-6 text-primary-600' />
+                <h2 className='text-2xl font-bold text-neutral-900'>
                   {editingMessage ? 'Edit Template' : 'Create New Template'}
                 </h2>
               </div>
               <button
-                type="button"
+                type='button'
                 onClick={onClose}
-                className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg"
+                className='p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg'
               >
-                <X className="h-5 w-5" />
+                <X className='h-5 w-5' />
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className='space-y-6'>
               {/* Title */}
               <div>
-                <label className="form-label">
-                  Template Title *
-                </label>
+                <label className='form-label'>Template Title *</label>
                 <input
-                  type="text"
+                  type='text'
                   value={formData.title}
-                  onChange={(e) => handleChange('title', e.target.value)}
-                  className="input-field"
-                  placeholder="e.g., Cold Outreach - Software Engineer"
+                  onChange={e => handleChange('title', e.target.value)}
+                  className='input-field'
+                  placeholder='e.g., Cold Outreach - Software Engineer'
                   required
                 />
               </div>
 
               {/* Message Type */}
               <div>
-                <label className="form-label">
-                  Message Type *
-                </label>
+                <label className='form-label'>Message Type *</label>
                 <select
                   value={formData.message_type}
-                  onChange={(e) => handleChange('message_type', e.target.value as ReferralMessageType)}
-                  className="input-field"
+                  onChange={e =>
+                    handleChange('message_type', e.target.value as ReferralMessageType)
+                  }
+                  className='input-field'
                   required
                 >
                   {Object.values(ReferralMessageType).map(type => (
@@ -176,43 +178,39 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
             </div>
 
             {/* Message Template */}
-            <div className="mt-6">
-              <label className="form-label">
-                Message Template *
-              </label>
+            <div className='mt-6'>
+              <label className='form-label'>Message Template *</label>
               <textarea
                 value={formData.message_template}
-                onChange={(e) => handleChange('message_template', e.target.value)}
-                className="input-field h-48 resize-none"
+                onChange={e => handleChange('message_template', e.target.value)}
+                className='input-field h-48 resize-none'
                 placeholder="Hi {contact_name},
 
 I hope this message finds you well. My name is {your_name}, and I'm interested in..."
                 required
               />
-              <p className="text-xs text-neutral-500 mt-2">
-                Use variables: {'{contact_name}'}, {'{company_name}'}, {'{position_title}'}, {'{your_name}'}
+              <p className='text-xs text-neutral-500 mt-2'>
+                Use variables: {'{contact_name}'}, {'{company_name}'}, {'{position_title}'},{' '}
+                {'{your_name}'}
               </p>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn btn-secondary"
-              >
+            <div className='flex justify-end gap-3 mt-6 pt-4 border-t border-neutral-200'>
+              <button type='button' onClick={onClose} className='btn btn-secondary'>
                 Cancel
               </button>
               <button
-                type="submit"
+                type='submit'
                 disabled={createMutation.isPending || updateMutation.isPending}
-                className="btn btn-primary"
+                className='btn btn-primary'
               >
-                <Save className="h-4 w-4 mr-2" />
-                {createMutation.isPending || updateMutation.isPending 
-                  ? 'Saving...' 
-                  : editingMessage ? 'Update Template' : 'Create Template'
-                }
+                <Save className='h-4 w-4 mr-2' />
+                {createMutation.isPending || updateMutation.isPending
+                  ? 'Saving...'
+                  : editingMessage
+                    ? 'Update Template'
+                    : 'Create Template'}
               </button>
             </div>
           </form>
@@ -222,4 +220,4 @@ I hope this message finds you well. My name is {your_name}, and I'm interested i
   );
 };
 
-export default ReferralMessageForm; 
+export default ReferralMessageForm;
