@@ -20,6 +20,11 @@ class ApplicationSource(enum.Enum):
     GLASSDOOR = "glassdoor"
     OTHER = "other"
 
+class ApplicationPriority(enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
 class Application(Base):
     __tablename__ = "applications"
 
@@ -30,6 +35,7 @@ class Application(Base):
     job_url = Column(String, nullable=False)
     portal_url = Column(String, nullable=True)
     status = Column(Enum(ApplicationStatus), default=ApplicationStatus.APPLIED, index=True)
+    priority = Column(Enum(ApplicationPriority), default=ApplicationPriority.MEDIUM, index=True)
     date_applied = Column(DateTime, nullable=False, index=True)
     email_used = Column(String, nullable=False)
     resume_filename = Column(String, nullable=False)  # Store the filename
@@ -46,6 +52,7 @@ class Application(Base):
         Index('idx_status_date', 'status', 'date_applied'),
         Index('idx_source_status', 'source', 'status'),
         Index('idx_company_status', 'company_name', 'status'),
+        Index('idx_priority_status', 'priority', 'status'),
     )
 
     def __repr__(self):

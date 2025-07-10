@@ -1,7 +1,7 @@
 from pydantic import BaseModel, HttpUrl, field_validator, EmailStr
 from typing import Optional, List
 from datetime import datetime
-from .models.application import ApplicationStatus, ApplicationSource
+from .models.application import ApplicationStatus, ApplicationSource, ApplicationPriority
 from .models.contact import ContactType
 from .models.referral_message import ReferralMessageType
 from .models.template_file import TemplateFileType
@@ -14,6 +14,7 @@ class ApplicationBase(BaseModel):
     job_url: HttpUrl
     portal_url: Optional[HttpUrl] = None
     status: ApplicationStatus = ApplicationStatus.APPLIED
+    priority: ApplicationPriority = ApplicationPriority.MEDIUM
     date_applied: datetime
     email_used: str
     resume_filename: str
@@ -33,6 +34,7 @@ class ApplicationUpdate(BaseModel):
     job_url: Optional[HttpUrl] = None
     portal_url: Optional[HttpUrl] = None
     status: Optional[ApplicationStatus] = None
+    priority: Optional[ApplicationPriority] = None
     date_applied: Optional[datetime] = None
     email_used: Optional[str] = None
     resume_filename: Optional[str] = None
@@ -107,6 +109,7 @@ class Interaction(InteractionBase):
 class ApplicationFilter(BaseModel):
     company_name: Optional[str] = None
     status: Optional[ApplicationStatus] = None
+    priority: Optional[ApplicationPriority] = None
     source: Optional[ApplicationSource] = None
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None

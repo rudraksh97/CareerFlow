@@ -10,7 +10,7 @@ import shutil
 from pathlib import Path
 
 from ..models.database import get_db
-from ..models.application import Application, ApplicationStatus, ApplicationSource
+from ..models.application import Application, ApplicationStatus, ApplicationSource, ApplicationPriority
 from ..models.setting import Setting as SettingModel
 from ..services.openai_service import OpenAIService
 from ..schemas import (
@@ -56,6 +56,7 @@ async def create_application(
     job_url: str = Form(...),
     portal_url: Optional[str] = Form(None),
     status: ApplicationStatus = Form(ApplicationStatus.APPLIED),
+    priority: ApplicationPriority = Form(ApplicationPriority.MEDIUM),
     date_applied: datetime = Form(...),
     email_used: str = Form(...),
     source: ApplicationSource = Form(...),
@@ -102,6 +103,7 @@ async def create_application(
         job_url=job_url,
         portal_url=portal_url,
         status=status,
+        priority=priority,
         date_applied=date_applied,
         email_used=email_used,
         resume_filename=resume_filename,
@@ -157,6 +159,7 @@ def get_applications(
     limit: int = Query(100, ge=1, le=1000),
     company_name: Optional[str] = None,
     status: Optional[ApplicationStatus] = None,
+    priority: Optional[ApplicationPriority] = None,
     source: Optional[ApplicationSource] = None,
     email_used: Optional[str] = None,
     db: Session = Depends(get_db)
@@ -169,6 +172,8 @@ def get_applications(
         query = query.filter(Application.company_name.ilike(f"%{company_name}%"))
     if status:
         query = query.filter(Application.status == status)
+    if priority:
+        query = query.filter(Application.priority == priority)
     if source:
         query = query.filter(Application.source == source)
     if email_used:

@@ -1,3 +1,10 @@
+// Application Priority Types
+export enum ApplicationPriority {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high"
+}
+
 // Referral Message Types
 export enum ReferralMessageType {
   COLD_OUTREACH = "cold_outreach",
@@ -79,6 +86,7 @@ export interface Application {
   company_name: string;
   job_title: string;
   status: string;
+  priority: ApplicationPriority;
   date_applied: string;
   job_url: string;
   portal_url?: string;

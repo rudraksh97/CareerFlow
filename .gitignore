@@ -1,5 +1,6 @@
 # Dependencies
 frontend/node_modules/
+node_modules/
 
 # Build artifacts
 frontend/dist/
@@ -25,6 +26,20 @@ backend/uploads/
 # Backup files
 backups/
 *.sql
+
+# Testing artifacts
+test-results/
+playwright-report/
+*.spec.js
+*.spec.ts.map
+
+# Temporary and sample files
+sample-files/
+dummy-*.pdf
+test-*.pdf
+*-test.*
+temp/
+tmp/
 
 # IDE and OS files
 .vscode/

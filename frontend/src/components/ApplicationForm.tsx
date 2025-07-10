@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Briefcase, Zap, Upload, FileText } from 'lucide-react'
 import { api } from '../services/api'
+import { ApplicationPriority } from '../types'
 
 interface Application {
   id?: string
@@ -12,6 +13,7 @@ interface Application {
   job_url: string
   portal_url?: string
   status: string
+  priority: ApplicationPriority
   date_applied: string
   email_used: string
   resume_filename?: string
@@ -33,6 +35,7 @@ interface FormData {
   job_url: string
   portal_url: string
   status: string
+  priority: ApplicationPriority
   date_applied: string
   email_used: string
   source: string
@@ -48,6 +51,7 @@ interface FormErrors {
   job_url?: string
   portal_url?: string
   status?: string
+  priority?: string
   date_applied?: string
   email_used?: string
   source?: string
@@ -63,6 +67,7 @@ const initialFormData: FormData = {
   job_url: '',
   portal_url: '',
   status: 'applied',
+  priority: ApplicationPriority.MEDIUM,
   date_applied: new Date().toISOString().split('T')[0],
   email_used: '',
   source: 'linkedin',
@@ -88,6 +93,7 @@ export default function ApplicationForm({ isOpen, onClose, editingApplication }:
       formData.append('job_url', data.job_url)
       if (data.portal_url) formData.append('portal_url', data.portal_url)
       formData.append('status', data.status)
+      formData.append('priority', data.priority)
       formData.append('date_applied', data.date_applied)
       formData.append('email_used', data.email_used)
       formData.append('source', data.source)
@@ -158,6 +164,7 @@ export default function ApplicationForm({ isOpen, onClose, editingApplication }:
         job_url: editingApplication.job_url || '',
         portal_url: editingApplication.portal_url || '',
         status: editingApplication.status || 'applied',
+        priority: editingApplication.priority || ApplicationPriority.MEDIUM,
         date_applied: editingApplication.date_applied?.split('T')[0] || new Date().toISOString().split('T')[0],
         email_used: editingApplication.email_used || '',
         source: editingApplication.source || 'linkedin',
@@ -511,6 +518,21 @@ export default function ApplicationForm({ isOpen, onClose, editingApplication }:
                     <option value="rejected">Rejected</option>
                     <option value="withdrawn">Withdrawn</option>
                     <option value="pending">Pending</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label">
+                    Priority
+                  </label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => handleInputChange('priority', e.target.value as ApplicationPriority)}
+                    className="form-input"
+                  >
+                    <option value={ApplicationPriority.LOW}>Low</option>
+                    <option value={ApplicationPriority.MEDIUM}>Medium</option>
+                    <option value={ApplicationPriority.HIGH}>High</option>
                   </select>
                 </div>
 

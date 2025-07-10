@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Filter, Edit, Trash2, Building, Calendar, ExternalLink, BarChart3, FileText, Mail, User } from 'lucide-react'
+import { Plus, Search, Filter, Edit, Trash2, Building, Calendar, ExternalLink, BarChart3, FileText, Mail, User, ChevronUp, ChevronDown, Minus } from 'lucide-react'
 import { api } from '../services/api'
 import ApplicationForm from '../components/ApplicationForm'
+import { ApplicationPriority } from '../types'
 
 interface Application {
   id: string
@@ -13,6 +14,7 @@ interface Application {
   job_url: string
   portal_url?: string
   status: string
+  priority: ApplicationPriority
   date_applied: string
   email_used: string
   resume_filename?: string
@@ -28,6 +30,7 @@ export default function Applications() {
   const [editingApplication, setEditingApplication] = useState<Application | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [priorityFilter, setPriorityFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   
   const queryClient = useQueryClient()
@@ -51,11 +54,12 @@ export default function Applications() {
         app.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.job_title.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = !statusFilter || app.status === statusFilter
+      const matchesPriority = !priorityFilter || app.priority === priorityFilter
       const matchesSource = !sourceFilter || app.source === sourceFilter
       
-      return matchesSearch && matchesStatus && matchesSource
+      return matchesSearch && matchesStatus && matchesPriority && matchesSource
     })
-  }, [applications, searchTerm, statusFilter, sourceFilter])
+  }, [applications, searchTerm, statusFilter, priorityFilter, sourceFilter])
 
   const handleAddApplication = () => {
     setEditingApplication(null)
@@ -81,6 +85,24 @@ export default function Applications() {
       case 'rejected': return 'status-rejected'
       case 'withdrawn': return 'status-pending'
       default: return 'status-applied'
+    }
+  }
+
+  const getPriorityColor = (priority: ApplicationPriority) => {
+    switch (priority) {
+      case ApplicationPriority.HIGH: return 'text-red-700 bg-red-50 border-red-200'
+      case ApplicationPriority.MEDIUM: return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+      case ApplicationPriority.LOW: return 'text-gray-700 bg-gray-50 border-gray-200'
+      default: return 'text-yellow-700 bg-yellow-50 border-yellow-200'
+    }
+  }
+
+  const getPriorityIcon = (priority: ApplicationPriority) => {
+    switch (priority) {
+      case ApplicationPriority.HIGH: return <ChevronUp className="h-3 w-3" />
+      case ApplicationPriority.MEDIUM: return <Minus className="h-3 w-3" />
+      case ApplicationPriority.LOW: return <ChevronDown className="h-3 w-3" />
+      default: return <Minus className="h-3 w-3" />
     }
   }
 
@@ -162,7 +184,7 @@ export default function Applications() {
           </div>
           <h3 className="text-lg font-semibold text-neutral-900">Filters & Search</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-neutral-400" />
             <input
@@ -184,6 +206,16 @@ export default function Applications() {
             <option value="offer">Offer</option>
             <option value="rejected">Rejected</option>
             <option value="withdrawn">Withdrawn</option>
+          </select>
+          <select
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="form-input"
+          >
+            <option value="">All Priorities</option>
+            <option value={ApplicationPriority.HIGH}>High</option>
+            <option value={ApplicationPriority.MEDIUM}>Medium</option>
+            <option value={ApplicationPriority.LOW}>Low</option>
           </select>
           <select
             value={sourceFilter}
@@ -213,7 +245,7 @@ export default function Applications() {
             <Building className="h-16 w-16 text-neutral-400 mx-auto mb-6" />
             <h3 className="text-xl font-semibold text-neutral-900 mb-2">No applications found</h3>
             <p className="text-neutral-600 mb-6 max-w-md mx-auto">
-              {searchTerm || statusFilter || sourceFilter 
+              {searchTerm || statusFilter || priorityFilter || sourceFilter 
                 ? 'Try adjusting your filters to see more results'
                 : 'Start tracking your job applications to see them here'
               }
@@ -237,6 +269,7 @@ export default function Applications() {
                     <th className="text-left p-4 font-semibold text-neutral-900">Resume</th>
                     <th className="text-left p-4 font-semibold text-neutral-900">Applied With</th>
                     <th className="text-left p-4 font-semibold text-neutral-900">Status</th>
+                    <th className="text-left p-4 font-semibold text-neutral-900">Priority</th>
                     <th className="text-left p-4 font-semibold text-neutral-900">Notes</th>
                     <th className="text-left p-4 font-semibold text-neutral-900">Referral Contact</th>
                     <th className="text-left p-4 font-semibold text-neutral-900">Actions</th>
@@ -317,6 +350,14 @@ export default function Applications() {
                           <span className={`${getStatusColor(application.status)}`}>
                             {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                           </span>
+                        </td>
+
+                        {/* Priority */}
+                        <td className="p-4">
+                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${getPriorityColor(application.priority)}`}>
+                            {getPriorityIcon(application.priority)}
+                            <span>{application.priority.charAt(0).toUpperCase() + application.priority.slice(1)}</span>
+                          </div>
                         </td>
 
                         {/* Notes */}
