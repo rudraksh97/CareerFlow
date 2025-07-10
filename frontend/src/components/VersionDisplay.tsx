@@ -1,4 +1,4 @@
-import { Info, Code, GitBranch } from 'lucide-react';
+import { Info, Code, GitBranch, Github, ExternalLink, Star } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import { fetchVersionInfo, formatVersion, getFrontendVersion, VersionInfo } from '../utils/version';
@@ -12,6 +12,7 @@ const VersionDisplay: React.FC<VersionDisplayProps> = ({ className = '', showDet
   const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [starCount, setStarCount] = useState<number | null>(null);
 
   useEffect(() => {
     const loadVersionInfo = async () => {
@@ -26,6 +27,23 @@ const VersionDisplay: React.FC<VersionDisplayProps> = ({ className = '', showDet
     };
 
     loadVersionInfo();
+  }, []);
+
+  // Fetch GitHub star count
+  useEffect(() => {
+    const fetchStarCount = async () => {
+      try {
+        const response = await fetch('https://api.github.com/repos/rudraksh97/PATS');
+        if (response.ok) {
+          const data = await response.json();
+          setStarCount(data.stargazers_count);
+        }
+      } catch (error) {
+        console.error('Failed to fetch star count:', error);
+      }
+    };
+
+    fetchStarCount();
   }, []);
 
   if (isLoading) {
@@ -98,52 +116,79 @@ const VersionDisplay: React.FC<VersionDisplayProps> = ({ className = '', showDet
   }
 
   return (
-    <div className={`relative ${className}`}>
-      <button
-        className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 cursor-pointer group focus-ring'
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-      >
-        <div className='p-1 rounded bg-neutral-100 group-hover:bg-blue-100 transition-all duration-200'>
-          <Code className='w-3 h-3 text-neutral-600 group-hover:text-blue-600' />
-        </div>
-        <span className='font-mono'>v{formatVersion(backendVersion)}</span>
-      </button>
-
-      {showTooltip && versionInfo && (
-        <div className='absolute bottom-full left-0 mb-3 p-4 bg-white border border-neutral-200 shadow-xl text-xs rounded-xl whitespace-nowrap z-50'>
-          <div className='space-y-2'>
-            <div className='flex items-center justify-between gap-6'>
-              <span className='text-neutral-600 font-medium'>Frontend:</span>
-              <span className='font-mono text-neutral-900'>{formatVersion(frontendVersion)}</span>
+    <div className={`${className}`}>
+      <div className='flex items-center justify-between gap-2'>
+        {/* Version button */}
+        <div className='relative'>
+          <button
+            className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 cursor-pointer group focus-ring'
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            <div className='p-1 rounded bg-neutral-100 group-hover:bg-blue-100 transition-all duration-200'>
+              <Code className='w-3 h-3 text-neutral-600 group-hover:text-blue-600' />
             </div>
-            <div className='flex items-center justify-between gap-6'>
-              <span className='text-neutral-600 font-medium'>Backend:</span>
-              <span className='font-mono text-neutral-900'>{formatVersion(backendVersion)}</span>
-            </div>
-            <div className='flex items-center justify-between gap-6'>
-              <span className='text-neutral-600 font-medium'>API:</span>
-              <span className='font-mono text-neutral-900'>{versionInfo.api_version}</span>
-            </div>
-            {versionInfo.build_info.commit_hash !== 'unknown' && (
-              <>
-                <div className='h-px bg-neutral-200 my-2' />
+            <span className='font-mono'>{formatVersion(backendVersion)}</span>
+          </button>
+          
+          {showTooltip && versionInfo && (
+            <div className='absolute bottom-full left-0 mb-3 p-4 bg-white border border-neutral-200 shadow-xl text-xs rounded-xl whitespace-nowrap z-50'>
+              <div className='space-y-2'>
                 <div className='flex items-center justify-between gap-6'>
-                  <span className='text-neutral-600 font-medium flex items-center gap-1'>
-                    <GitBranch className='w-3 h-3' />
-                    Build:
-                  </span>
-                  <span className='font-mono text-neutral-700 text-[10px]'>
-                    {versionInfo.build_info.commit_hash}
-                  </span>
+                  <span className='text-neutral-600 font-medium'>Frontend:</span>
+                  <span className='font-mono text-neutral-900'>{formatVersion(frontendVersion)}</span>
                 </div>
-              </>
-            )}
-          </div>
-          {/* Tooltip arrow */}
-          <div className='absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-200' />
+                <div className='flex items-center justify-between gap-6'>
+                  <span className='text-neutral-600 font-medium'>Backend:</span>
+                  <span className='font-mono text-neutral-900'>{formatVersion(backendVersion)}</span>
+                </div>
+                <div className='flex items-center justify-between gap-6'>
+                  <span className='text-neutral-600 font-medium'>API:</span>
+                  <span className='font-mono text-neutral-900'>{versionInfo.api_version}</span>
+                </div>
+                {versionInfo.build_info.commit_hash !== 'unknown' && (
+                  <>
+                    <div className='h-px bg-neutral-200 my-2' />
+                    <div className='flex items-center justify-between gap-6'>
+                      <span className='text-neutral-600 font-medium flex items-center gap-1'>
+                        <GitBranch className='w-3 h-3' />
+                        Build:
+                      </span>
+                      <span className='font-mono text-neutral-700 text-[10px]'>
+                        {versionInfo.build_info.commit_hash}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* Tooltip arrow */}
+              <div className='absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-200' />
+            </div>
+          )}
         </div>
-      )}
+        
+        {/* GitHub repo link */}
+        <a
+          href='https://github.com/rudraksh97/PATS'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 hover:border-neutral-300 transition-all duration-200 group'
+          title='View source code on GitHub'
+        >
+          <Github className='w-3 h-3' />
+          <span>Code</span>
+          {starCount !== null && (
+            <>
+              <div className='w-px h-3 bg-neutral-300' />
+              <div className='flex items-center gap-1'>
+                <Star className='w-3 h-3 text-yellow-500' />
+                <span className='font-mono'>{starCount}</span>
+              </div>
+            </>
+          )}
+          <ExternalLink className='w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity' />
+        </a>
+      </div>
     </div>
   );
 };
