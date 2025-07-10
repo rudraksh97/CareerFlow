@@ -35,7 +35,7 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
         Application.date_applied >= thirty_days_ago
     ).count()
     
-    # Success rate
+    # Success rate (interviews and offers)
     successful = db.query(Application).filter(
         Application.status.in_([ApplicationStatus.INTERVIEW, ApplicationStatus.OFFER])
     ).count()
@@ -64,6 +64,90 @@ def get_dashboard_analytics(db: Session = Depends(get_db)):
         "total_contacts": total_contacts,
         "contacts_by_type": contact_type_counts,
         "recent_interactions": recent_interactions
+    }
+
+@router.get("/applications/")
+def get_application_analytics(db: Session = Depends(get_db)):
+    """Get application-specific analytics"""
+    
+    # Application analytics
+    total_applications = db.query(Application).count()
+    
+    # Status breakdown
+    status_counts = {}
+    for status in ApplicationStatus:
+        count = db.query(Application).filter(Application.status == status).count()
+        status_counts[status.value] = count
+    
+    # Success rate (interviews and offers)
+    successful = db.query(Application).filter(
+        Application.status.in_([ApplicationStatus.INTERVIEW, ApplicationStatus.OFFER])
+    ).count()
+    success_rate = (successful / total_applications * 100) if total_applications > 0 else 0
+    
+    return {
+        "total_applications": total_applications,
+        "applications_by_status": status_counts,
+        "success_rate": round(success_rate, 2)
+    }
+
+@router.get("/contacts/")
+def get_contact_analytics(db: Session = Depends(get_db)):
+    """Get contact-specific analytics"""
+    
+    # Contact analytics
+    total_contacts = db.query(Contact).count()
+    
+    # Contact type breakdown
+    contact_type_counts = {}
+    for contact_type in ContactType:
+        count = db.query(Contact).filter(Contact.contact_type == contact_type).count()
+        contact_type_counts[contact_type.value] = count
+    
+    # Recent interactions (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    recent_interactions = db.query(Interaction).filter(
+        Interaction.date >= thirty_days_ago
+    ).count()
+    
+    return {
+        "total_contacts": total_contacts,
+        "contacts_by_type": contact_type_counts,
+        "recent_interactions": recent_interactions
+    }
+
+@router.get("/performance/")
+def get_performance_analytics(db: Session = Depends(get_db)):
+    """Get performance metrics analytics"""
+    
+    total_applications = db.query(Application).count()
+    
+    if total_applications == 0:
+        return {
+            "total_applications": 0,
+            "interview_rate": 0.0,
+            "offer_rate": 0.0,
+            "success_rate": 0.0
+        }
+    
+    # Interview rate (applied + interview + offer + rejected that had interviews)
+    interviews = db.query(Application).filter(
+        Application.status.in_([ApplicationStatus.INTERVIEW, ApplicationStatus.OFFER])
+    ).count()
+    interview_rate = (interviews / total_applications * 100)
+    
+    # Offer rate
+    offers = db.query(Application).filter(Application.status == ApplicationStatus.OFFER).count()
+    offer_rate = (offers / total_applications * 100)
+    
+    # Success rate (offers)
+    success_rate = offer_rate
+    
+    return {
+        "total_applications": total_applications,
+        "interview_rate": round(interview_rate, 2),
+        "offer_rate": round(offer_rate, 2),
+        "success_rate": round(success_rate, 2)
     }
 
 @router.get("/applications/trends")
@@ -206,7 +290,7 @@ def export_data(
             "status": app.status.value,
             "date_applied": app.date_applied.isoformat(),
             "email_used": app.email_used,
-            "resume_version": app.resume_version,
+            "resume_filename": app.resume_filename,
             "source": app.source.value,
             "notes": app.notes,
             "created_at": app.created_at.isoformat(),

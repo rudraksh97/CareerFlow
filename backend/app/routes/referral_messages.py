@@ -86,7 +86,7 @@ def update_referral_message(
         raise HTTPException(status_code=404, detail="Referral message not found")
     
     # Update fields that were provided
-    update_data = message_update.dict(exclude_unset=True)
+    update_data = message_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(message, field, value)
     
@@ -146,6 +146,9 @@ def generate_personalized_message(
     template = db.query(ReferralMessageModel).filter(ReferralMessageModel.id == request.template_id).first()
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
+    
+    if not template.is_active:
+        raise HTTPException(status_code=400, detail="Template is inactive and cannot be used for generation")
     
     # Prepare variables for substitution
     variables = {

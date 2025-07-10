@@ -34,17 +34,19 @@ def generate_id():
     return str(uuid.uuid4())
 
 def save_upload_file(file: UploadFile, application_id: str, upload_dir: Path) -> tuple[str, str]:
-    """Save upload file and return filename and file path"""
-    # Generate unique filename
+    """Save upload file and return original filename and file path"""
+    # Generate unique filename for file system
     file_extension = Path(file.filename).suffix if file.filename else '.pdf'
-    filename = f"{application_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}{file_extension}"
-    file_path = upload_dir / filename
+    system_filename = f"{application_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}{file_extension}"
+    file_path = upload_dir / system_filename
     
     # Save file
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    return filename, str(file_path)
+    # Return original filename for database, actual file path for system
+    original_filename = file.filename if file.filename else f"resume{file_extension}"
+    return original_filename, str(file_path)
 
 @router.post("/", response_model=ApplicationSchema)
 async def create_application(
@@ -215,7 +217,12 @@ def update_application(
     if db_application is None:
         raise HTTPException(status_code=404, detail="Application not found")
     
-    update_data = application_update.dict(exclude_unset=True)
+    update_data = application_update.model_dump(exclude_unset=True)
+    if 'job_url' in update_data and update_data['job_url']:
+        update_data['job_url'] = str(update_data['job_url'])
+    if 'portal_url' in update_data and update_data['portal_url']:
+        update_data['portal_url'] = str(update_data['portal_url'])
+
     for field, value in update_data.items():
         setattr(db_application, field, value)
     

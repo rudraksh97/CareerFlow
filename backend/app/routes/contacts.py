@@ -20,15 +20,13 @@ def create_contact(
     db: Session = Depends(get_db)
 ):
     """Create a new contact"""
+    contact_data = contact.model_dump()
+    if contact_data.get("linkedin_url"):
+        contact_data["linkedin_url"] = str(contact_data["linkedin_url"])
+
     db_contact = Contact(
         id=generate_id(),
-        name=contact.name,
-        email=contact.email,
-        company=contact.company,
-        role=contact.role,
-        linkedin_url=str(contact.linkedin_url) if contact.linkedin_url else None,
-        contact_type=contact.contact_type,
-        notes=contact.notes
+        **contact_data
     )
     db.add(db_contact)
     db.commit()
@@ -61,6 +59,22 @@ def get_contacts(
     contacts = query.offset(skip).limit(limit).all()
     return contacts
 
+@router.get("/search/", response_model=List[ContactSchema])
+def search_contacts(
+    q: str = Query(..., description="Search query"),
+    db: Session = Depends(get_db)
+):
+    """Search contacts by name, company, or email"""
+    query = db.query(Contact).filter(
+        or_(
+            Contact.name.ilike(f"%{q}%"),
+            Contact.company.ilike(f"%{q}%"),
+            Contact.email.ilike(f"%{q}%")
+        )
+    )
+    contacts = query.all()
+    return contacts
+
 @router.get("/{contact_id}/", response_model=ContactSchema)
 def get_contact(contact_id: str, db: Session = Depends(get_db)):
     """Get a specific contact by ID"""
@@ -80,7 +94,7 @@ def update_contact(
     if db_contact is None:
         raise HTTPException(status_code=404, detail="Contact not found")
     
-    update_data = contact_update.dict(exclude_unset=True)
+    update_data = contact_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         if field == "linkedin_url" and value is not None:
             setattr(db_contact, field, str(value))
@@ -103,22 +117,6 @@ def delete_contact(contact_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Contact deleted successfully"}
 
-@router.get("/search/", response_model=List[ContactSchema])
-def search_contacts(
-    q: str = Query(..., description="Search query"),
-    db: Session = Depends(get_db)
-):
-    """Search contacts by name, company, or email"""
-    query = db.query(Contact).filter(
-        or_(
-            Contact.name.ilike(f"%{q}%"),
-            Contact.company.ilike(f"%{q}%"),
-            Contact.email.ilike(f"%{q}%")
-        )
-    )
-    contacts = query.all()
-    return contacts
-
 # Interaction endpoints
 @router.post("/{contact_id}/interactions/", response_model=InteractionSchema)
 def create_interaction(
@@ -135,7 +133,7 @@ def create_interaction(
     db_interaction = Interaction(
         id=generate_id(),
         contact_id=contact_id,
-        **interaction.dict()
+        **interaction.model_dump()
     )
     db.add(db_interaction)
     db.commit()

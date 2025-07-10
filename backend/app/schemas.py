@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, field_validator, EmailStr
 from typing import Optional, List
 from datetime import datetime
 from .models.application import ApplicationStatus, ApplicationSource
@@ -52,7 +52,7 @@ class Application(ApplicationBase):
 # Contact Schemas
 class ContactBase(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     company: str
     role: Optional[str] = None
     linkedin_url: Optional[str] = None
@@ -61,7 +61,7 @@ class ContactBase(BaseModel):
 
 class ContactCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     company: str
     role: Optional[str] = None
     linkedin_url: Optional[HttpUrl] = None
@@ -92,7 +92,7 @@ class InteractionBase(BaseModel):
     date: datetime
 
 class InteractionCreate(InteractionBase):
-    contact_id: str
+    pass
 
 class Interaction(InteractionBase):
     id: str
@@ -140,6 +140,13 @@ class CompanyInfo(BaseModel):
 class SettingBase(BaseModel):
     key: str
     value: str
+    
+    @field_validator('key')
+    @classmethod
+    def validate_key(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Key cannot be empty or whitespace-only")
+        return v.strip()
 
 class SettingCreate(SettingBase):
     pass
@@ -151,7 +158,7 @@ class Setting(SettingBase):
 # Profile Schemas
 class ProfileBase(BaseModel):
     full_name: Optional[str] = None
-    email: Optional[str] = None
+    email: Optional[EmailStr] = None
     headline: Optional[str] = None
     linkedin_url: Optional[HttpUrl] = None
 

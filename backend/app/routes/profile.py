@@ -16,7 +16,7 @@ def get_profile(db: Session = Depends(get_db)):
     profile = db.query(ProfileModel).filter(ProfileModel.id == PROFILE_ID).first()
     if not profile:
         # Return a default empty profile if none exists
-        return Profile(id=PROFILE_ID, full_name="", email="", headline="", linkedin_url=None)
+        return Profile(id=PROFILE_ID, full_name="", email=None, headline="", linkedin_url=None)
     return profile
 
 @router.post("/", response_model=Profile)
@@ -26,13 +26,17 @@ def upsert_profile(profile_data: ProfileCreate, db: Session = Depends(get_db)):
     """
     profile = db.query(ProfileModel).filter(ProfileModel.id == PROFILE_ID).first()
     
+    update_data = profile_data.model_dump(exclude_unset=True)
+    if 'linkedin_url' in update_data and update_data['linkedin_url']:
+        update_data['linkedin_url'] = str(update_data['linkedin_url'])
+
     if profile:
         # Update existing profile
-        for key, value in profile_data.dict(exclude_unset=True).items():
+        for key, value in update_data.items():
             setattr(profile, key, value)
     else:
         # Create new profile
-        profile = ProfileModel(id=PROFILE_ID, **profile_data.dict())
+        profile = ProfileModel(id=PROFILE_ID, **update_data)
         db.add(profile)
         
     db.commit()
