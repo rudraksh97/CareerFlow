@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const Applications = React.lazy(() => import('./pages/Applications'))
 const Contacts = React.lazy(() => import('./pages/Contacts'))
+const ReferralMessages = React.lazy(() => import('./pages/ReferralMessages'))
 const Analytics = React.lazy(() => import('./pages/Analytics'))
 const Settings = React.lazy(() => import('./pages/Settings'))
 const Profile = React.lazy(() => import('./pages/Profile'))
@@ -22,6 +23,7 @@ const App: React.FC = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/applications" element={<Applications />} />
           <Route path="/contacts" element={<Contacts />} />
+          <Route path="/referral-messages" element={<ReferralMessages />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />

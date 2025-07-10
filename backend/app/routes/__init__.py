@@ -5,9 +5,11 @@ from . import settings
 from . import profile
 from . import resumes
 from . import cover_letters
+from . import referral_messages
 
 __all__ = [
     "applications_router",
     "contacts_router", 
-    "analytics_router"
+    "analytics_router",
+    "referral_messages_router"
 ] 

@@ -1,0 +1,2 @@
+# This file ensures the data directory is tracked in git
+# Database files (*.db) are ignored but the directory structure is preserved 

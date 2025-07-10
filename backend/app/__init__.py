@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import applications, contacts, analytics, settings, profile, resumes, cover_letters
+from .routes import applications, contacts, analytics, settings, profile, resumes, cover_letters, referral_messages
 from .models.database import engine, Base
 from .version import VERSION_INFO, VERSION
 
@@ -30,6 +30,7 @@ app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 app.include_router(profile.router, prefix="/api/profile", tags=["profile"])
 app.include_router(resumes.router, prefix="/api/resumes", tags=["resumes"])
 app.include_router(cover_letters.router, prefix="/api/cover-letters", tags=["cover_letters"])
+app.include_router(referral_messages.router, prefix="/api/referral-messages", tags=["referral_messages"])
 
 
 @app.get("/")

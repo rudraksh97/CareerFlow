@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 from .models.application import ApplicationStatus, ApplicationSource
 from .models.contact import ContactType
+from .models.referral_message import ReferralMessageType
 
 # Application Schemas
 class ApplicationBase(BaseModel):
@@ -160,4 +161,53 @@ class Profile(ProfileBase):
     id: int
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+# Referral Message Schemas
+class ReferralMessageBase(BaseModel):
+    title: str
+    message_type: ReferralMessageType
+    subject_template: Optional[str] = None
+    message_template: str
+    target_company: Optional[str] = None
+    target_position: Optional[str] = None
+    is_active: bool = True
+    notes: Optional[str] = None
+
+class ReferralMessageCreate(ReferralMessageBase):
+    pass
+
+class ReferralMessageUpdate(BaseModel):
+    title: Optional[str] = None
+    message_type: Optional[ReferralMessageType] = None
+    subject_template: Optional[str] = None
+    message_template: Optional[str] = None
+    target_company: Optional[str] = None
+    target_position: Optional[str] = None
+    is_active: Optional[bool] = None
+    notes: Optional[str] = None
+
+class ReferralMessage(ReferralMessageBase):
+    id: str
+    usage_count: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Referral Message Generation Schema
+class GenerateReferralMessageRequest(BaseModel):
+    template_id: str
+    contact_name: Optional[str] = None
+    company_name: Optional[str] = None
+    position_title: Optional[str] = None
+    your_name: Optional[str] = None
+    your_background: Optional[str] = None
+    custom_variables: Optional[dict] = None
+
+class GeneratedReferralMessage(BaseModel):
+    subject: Optional[str] = None
+    message: str
+    template_title: str
+    variables_used: dict 

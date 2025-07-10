@@ -11,7 +11,8 @@ import {
   X,
   ChevronRight,
   User,
-  Github
+  Github,
+  MessageSquare
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,6 +22,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Applications', href: '/applications', icon: Briefcase },
   { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Referral Messages', href: '/referral-messages', icon: MessageSquare },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Resumes', href: '/resumes', icon: FileText },
   { name: 'Cover Letters', href: '/cover-letters', icon: FileText },

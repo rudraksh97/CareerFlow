@@ -16,6 +16,8 @@ env/
 # Database files
 *.db
 *.sqlite3
+backend/data/*.db
+backend/data/*.sqlite3
 
 # Uploads
 backend/uploads/
