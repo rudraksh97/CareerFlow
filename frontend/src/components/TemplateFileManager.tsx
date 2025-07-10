@@ -259,13 +259,13 @@ const TemplateFileManager: React.FC<TemplateFileManagerProps> = ({ fileType, tit
           ))}
         </div>
       ) : (
-        <div className='flex items-center justify-center py-12'>
-          <div className='text-center border-2 border-dashed border-neutral-200 rounded-lg p-8 max-w-sm mx-auto'>
-            <div className='p-3 rounded-full bg-neutral-100 w-fit mx-auto mb-3'>
+        <div className='py-12'>
+          <div className='text-left border-2 border-dashed border-neutral-200 rounded-lg p-8 max-w-sm'>
+            <div className='p-3 rounded-full bg-neutral-100 w-fit mb-3'>
               <FileText className='h-6 w-6 text-neutral-400' />
             </div>
             <p className='text-neutral-600 text-sm mb-4'>No template {title.toLowerCase()} yet</p>
-            <div className='flex justify-center'>
+            <div className='flex justify-start'>
               <motion.button
                 onClick={() => setIsUploadModalOpen(true)}
                 className='btn-primary text-sm'

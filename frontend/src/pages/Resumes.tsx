@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Download, Building, Briefcase, Calendar, FileText } from 'lucide-react';
+import { Download, Building, Briefcase, Calendar, FileText, Search, Filter, SortAsc, SortDesc } from 'lucide-react';
+import { useState, useMemo } from 'react';
 
 import TemplateFileManager from '@/components/TemplateFileManager';
 import { api } from '@/services/api';
@@ -13,7 +14,16 @@ interface Application {
   resume_filename: string;
 }
 
+type SortField = 'date_applied' | 'company_name' | 'job_title' | 'resume_filename';
+type SortDirection = 'asc' | 'desc';
+
 const Resumes = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
+  const [sortField, setSortField] = useState<SortField>('date_applied');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
   const {
     data: applications,
     isLoading,
@@ -22,6 +32,92 @@ const Resumes = () => {
     queryKey: ['resumes'],
     queryFn: () => api.get('/resumes/').then(res => res.data),
   });
+
+  // Get unique companies for filter dropdown
+  const uniqueCompanies = useMemo(() => {
+    if (!applications) return [];
+    const companies = [...new Set(applications.map(app => app.company_name))];
+    return companies.sort();
+  }, [applications]);
+
+  // Filter and sort applications
+  const filteredAndSortedApplications = useMemo(() => {
+    if (!applications) return [];
+
+    let filtered = applications.filter(app => {
+      const matchesSearch = 
+        app.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.resume_filename.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCompany = !companyFilter || app.company_name === companyFilter;
+      
+      const matchesDate = !dateFilter || (() => {
+        const appDate = new Date(app.date_applied);
+        const now = new Date();
+        const daysAgo = Math.floor((now.getTime() - appDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        switch (dateFilter) {
+          case 'week': return daysAgo <= 7;
+          case 'month': return daysAgo <= 30;
+          case 'quarter': return daysAgo <= 90;
+          case 'year': return daysAgo <= 365;
+          default: return true;
+        }
+      })();
+
+      return matchesSearch && matchesCompany && matchesDate;
+    });
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortField) {
+        case 'date_applied':
+          aVal = new Date(a.date_applied).getTime();
+          bVal = new Date(b.date_applied).getTime();
+          break;
+        case 'company_name':
+          aVal = a.company_name.toLowerCase();
+          bVal = b.company_name.toLowerCase();
+          break;
+        case 'job_title':
+          aVal = a.job_title.toLowerCase();
+          bVal = b.job_title.toLowerCase();
+          break;
+        case 'resume_filename':
+          aVal = a.resume_filename.toLowerCase();
+          bVal = b.resume_filename.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [applications, searchTerm, companyFilter, dateFilter, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setCompanyFilter('');
+    setDateFilter('');
+    setSortField('date_applied');
+    setSortDirection('desc');
+  };
 
   const handleDownloadResume = async (applicationId: string, filename: string) => {
     try {
@@ -80,16 +176,121 @@ const Resumes = () => {
         <TemplateFileManager fileType='resume' title='Resume Templates' />
       </motion.div>
 
-      {/* Resume Grid */}
+      {/* Application Resumes Section */}
       {applications && applications.length > 0 && (
         <motion.div variants={itemVariants} className='space-y-6'>
+          {/* Section Header with Stats */}
           <div className='flex items-center justify-between'>
-            <h3 className='text-lg font-semibold text-neutral-900'>Application Resumes</h3>
-            <span className='text-sm text-neutral-600'>
-              {applications.length} resume{applications.length !== 1 ? 's' : ''} from applications
-            </span>
+            <div>
+              <h3 className='text-xl font-semibold text-neutral-900'>Application Resumes</h3>
+              <p className='text-sm text-neutral-600'>
+                Showing {filteredAndSortedApplications.length} of {applications.length} resumes
+              </p>
+            </div>
           </div>
 
+          {/* Filters and Search */}
+          <div className='card p-6'>
+            <div className='flex items-center gap-2 mb-4'>
+              <Filter className='h-4 w-4 text-neutral-600' />
+              <h4 className='font-medium text-neutral-900'>Filter & Search</h4>
+            </div>
+            
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4'>
+              {/* Search */}
+              <div className='relative'>
+                <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400' />
+                <input
+                  type='text'
+                  placeholder='Search resumes...'
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className='input-field pl-10'
+                />
+              </div>
+
+              {/* Company Filter */}
+              <select
+                value={companyFilter}
+                onChange={(e) => setCompanyFilter(e.target.value)}
+                className='input-field'
+              >
+                <option value=''>All Companies</option>
+                {uniqueCompanies.map(company => (
+                  <option key={company} value={company}>{company}</option>
+                ))}
+              </select>
+
+              {/* Date Filter */}
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className='input-field'
+              >
+                <option value=''>All Time</option>
+                <option value='week'>Past Week</option>
+                <option value='month'>Past Month</option>
+                <option value='quarter'>Past 3 Months</option>
+                <option value='year'>Past Year</option>
+              </select>
+
+              {/* Sort */}
+              <div className='flex gap-2'>
+                <select
+                  value={sortField}
+                  onChange={(e) => setSortField(e.target.value as SortField)}
+                  className='input-field flex-1'
+                >
+                  <option value='date_applied'>Date Applied</option>
+                  <option value='company_name'>Company</option>
+                  <option value='job_title'>Job Title</option>
+                  <option value='resume_filename'>Filename</option>
+                </select>
+                <motion.button
+                  onClick={() => setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+                  className='btn-secondary px-3'
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {sortDirection === 'asc' ? 
+                    <SortAsc className='h-4 w-4' /> : 
+                    <SortDesc className='h-4 w-4' />
+                  }
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Active Filters & Clear */}
+            {(searchTerm || companyFilter || dateFilter || sortField !== 'date_applied' || sortDirection !== 'desc') && (
+              <div className='flex items-center gap-2 pt-4 border-t border-neutral-200'>
+                <span className='text-sm text-neutral-600'>Active filters:</span>
+                {searchTerm && (
+                  <span className='px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full'>
+                    Search: {searchTerm}
+                  </span>
+                )}
+                {companyFilter && (
+                  <span className='px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full'>
+                    Company: {companyFilter}
+                  </span>
+                )}
+                {dateFilter && (
+                  <span className='px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full'>
+                    Date: {dateFilter}
+                  </span>
+                )}
+                <motion.button
+                  onClick={clearFilters}
+                  className='text-xs text-neutral-600 hover:text-neutral-900 underline ml-auto'
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Clear all
+                </motion.button>
+              </div>
+            )}
+          </div>
+
+          {/* Resume Grid */}
           {isLoading ? (
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
               {Array.from({ length: 6 }).map((_, index) => (
@@ -122,6 +323,26 @@ const Resumes = () => {
                 Refresh Page
               </motion.button>
             </motion.div>
+          ) : filteredAndSortedApplications.length === 0 ? (
+            <motion.div className='card p-12 text-center' variants={itemVariants}>
+              <div className='p-4 rounded-full bg-neutral-100 w-fit mx-auto mb-6'>
+                <Search className='h-12 w-12 text-neutral-400' />
+              </div>
+              <h3 className='text-xl font-semibold text-neutral-900 mb-2'>
+                No resumes found
+              </h3>
+              <p className='text-neutral-600 mb-6'>
+                Try adjusting your filters or search terms to find more resumes.
+              </p>
+              <motion.button
+                onClick={clearFilters}
+                className='btn-secondary'
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Clear Filters
+              </motion.button>
+            </motion.div>
           ) : (
             <motion.div
               className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
@@ -129,12 +350,12 @@ const Resumes = () => {
               initial='hidden'
               animate='visible'
             >
-              {applications.map((app, index) => (
+              {filteredAndSortedApplications.map((app, index) => (
                 <motion.div
                   key={app.id}
                   className='card-interactive group'
                   variants={itemVariants}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.05 }}
                   whileHover={{ y: -4 }}
                 >
                   <div className='p-6 h-full flex flex-col'>
@@ -156,15 +377,21 @@ const Resumes = () => {
                       <div className='space-y-3 text-sm text-neutral-600'>
                         <div className='flex items-center gap-3'>
                           <Briefcase className='h-4 w-4 text-neutral-400 flex-shrink-0' />
-                          <span className='truncate'>{app.job_title}</span>
+                          <span className='truncate' title={app.job_title}>{app.job_title}</span>
                         </div>
                         <div className='flex items-center gap-3'>
                           <Building className='h-4 w-4 text-neutral-400 flex-shrink-0' />
-                          <span className='truncate'>{app.company_name}</span>
+                          <span className='truncate' title={app.company_name}>{app.company_name}</span>
                         </div>
                         <div className='flex items-center gap-3'>
                           <Calendar className='h-4 w-4 text-neutral-400 flex-shrink-0' />
-                          <span>Applied {new Date(app.date_applied).toLocaleDateString()}</span>
+                          <span className='font-medium text-neutral-700'>
+                            {new Date(app.date_applied).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
                         </div>
                       </div>
                     </div>
