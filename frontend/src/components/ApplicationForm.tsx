@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Briefcase, Zap, Upload, FileText } from 'lucide-react';
+import { X, Briefcase, Zap, FileText, CheckCircle, Circle, Building, ClipboardList, User } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
 import { api } from '../services/api';
@@ -77,6 +77,42 @@ const initialFormData: FormData = {
   cover_letter: null,
 };
 
+type TabType = 'basic' | 'details' | 'documents' | 'notes';
+
+interface Tab {
+  id: TabType;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  fields: (keyof FormData)[];
+}
+
+const tabs: Tab[] = [
+  {
+    id: 'basic',
+    label: 'Basic Info',
+    icon: Building,
+    fields: ['company_name', 'job_title', 'job_id', 'job_url', 'email_used'],
+  },
+  {
+    id: 'details',
+    label: 'Details',
+    icon: ClipboardList,
+    fields: ['status', 'priority', 'date_applied', 'portal_url', 'source'],
+  },
+  {
+    id: 'documents',
+    label: 'Documents',
+    icon: FileText,
+    fields: ['resume', 'cover_letter'],
+  },
+  {
+    id: 'notes',
+    label: 'Notes',
+    icon: User,
+    fields: ['notes'],
+  },
+];
+
 export default function ApplicationForm({
   isOpen,
   onClose,
@@ -86,6 +122,7 @@ export default function ApplicationForm({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('basic');
 
   const queryClient = useQueryClient();
 
@@ -184,7 +221,47 @@ export default function ApplicationForm({
       setFormData(initialFormData);
     }
     setErrors({});
+    setActiveTab('basic');
   }, [editingApplication, isOpen]);
+
+  // Helper function to get tab completion status
+  const getTabCompletionStatus = (tab: Tab): 'complete' | 'incomplete' => {
+    return tab.fields.every(field => {
+      if (field === 'notes') return true; // Notes are optional
+      if (field === 'cover_letter') return true; // Cover letter is optional
+      if (field === 'portal_url') return true; // Portal URL is optional
+      if (field === 'resume' && editingApplication) return true; // Resume optional for edits
+
+      const value = formData[field as keyof FormData];
+      return value !== '' && value !== null && value !== undefined;
+    }) ? 'complete' : 'incomplete';
+  };
+
+  // Helper function to get tab button classes
+  const getTabButtonClasses = (isActive: boolean, hasErrors: boolean): string => {
+    if (isActive) {
+      return 'bg-blue-600 text-white';
+    }
+    if (hasErrors) {
+      return 'text-red-600 bg-red-50 border border-red-200';
+    }
+    return 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50';
+  };
+
+  // Helper function to get tab indicator classes
+  const getTabIndicatorClasses = (
+    isActive: boolean,
+    isPast: boolean,
+    completionStatus: string,
+  ): string => {
+    if (isActive) {
+      return 'bg-blue-600 w-6';
+    }
+    if (isPast || completionStatus === 'complete') {
+      return 'bg-green-500';
+    }
+    return 'bg-neutral-300';
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -207,22 +284,22 @@ export default function ApplicationForm({
       newErrors.job_url = 'Please enter a valid URL';
     }
 
+    if (formData.portal_url && !isValidUrl(formData.portal_url)) {
+      newErrors.portal_url = 'Please enter a valid URL';
+    }
+
+    if (!formData.email_used.trim()) {
+      newErrors.email_used = 'Email is required';
+    } else if (!isValidEmail(formData.email_used)) {
+      newErrors.email_used = 'Please enter a valid email address';
+    }
+
     if (!formData.date_applied) {
       newErrors.date_applied = 'Application date is required';
     }
 
-    if (!formData.email_used.trim()) {
-      newErrors.email_used = 'Email used is required';
-    } else if (!isValidEmail(formData.email_used)) {
-      newErrors.email_used = 'Please enter a valid email';
-    }
-
     if (!editingApplication && !formData.resume) {
-      newErrors.resume = 'Resume file is required';
-    }
-
-    if (formData.portal_url && !isValidUrl(formData.portal_url)) {
-      newErrors.portal_url = 'Please enter a valid URL';
+      newErrors.resume = 'Resume is required for new applications';
     }
 
     setErrors(newErrors);
@@ -233,50 +310,53 @@ export default function ApplicationForm({
     try {
       new URL(string);
       return true;
-    } catch (_) {
+    } catch {
       return false;
     }
   };
 
   const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) {
+      // Find the first tab with errors and switch to it
+      const tabsWithErrors = tabs.filter(tab =>
+        tab.fields.some(field => errors[field]),
+      );
+      if (tabsWithErrors.length > 0) {
+        setActiveTab(tabsWithErrors[0].id);
+      }
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      if (editingApplication?.id) {
-        // For updates, use JSON data (different endpoint logic)
-        const submitData = {
-          company_name: formData.company_name.trim(),
-          job_title: formData.job_title.trim(),
-          job_id: formData.job_id.trim(),
-          job_url: formData.job_url.trim(),
-          portal_url: formData.portal_url.trim() || null,
-          status: formData.status,
-          date_applied: new Date(formData.date_applied).toISOString(),
-          email_used: formData.email_used.trim(),
-          source: formData.source,
-          notes: formData.notes.trim() || null,
-        };
+      if (editingApplication) {
         await updateApplicationMutation.mutateAsync({
-          id: editingApplication.id,
-          data: submitData,
+          id: editingApplication.id!,
+          data: {
+            company_name: formData.company_name,
+            job_title: formData.job_title,
+            job_id: formData.job_id,
+            job_url: formData.job_url,
+            portal_url: formData.portal_url || null,
+            status: formData.status,
+            priority: formData.priority,
+            date_applied: formData.date_applied,
+            email_used: formData.email_used,
+            source: formData.source,
+            notes: formData.notes || null,
+          },
         });
       } else {
         await createApplicationMutation.mutateAsync(formData);
       }
-    } catch (error) {
-      // Error handling is now done in mutation onError callbacks
-      console.error('Form submission error:', error);
+    } catch {
+    // Error handling is done in the mutation
     } finally {
       setIsSubmitting(false);
     }
@@ -285,12 +365,12 @@ export default function ApplicationForm({
   const handleClose = () => {
     setFormData(initialFormData);
     setErrors({});
+    setActiveTab('basic');
     onClose();
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
@@ -298,61 +378,31 @@ export default function ApplicationForm({
 
   const handleFileChange = (field: 'resume' | 'cover_letter', file: File | null) => {
     setFormData(prev => ({ ...prev, [field]: file }));
-    // Clear error when user selects file
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleParseJobUrl = async () => {
-    if (!formData.job_url.trim()) {
-      alert('Please enter a job URL first');
-      return;
-    }
-
-    if (!isValidUrl(formData.job_url)) {
-      alert('Please enter a valid URL');
-      return;
-    }
+    if (!formData.job_url.trim()) return;
 
     setIsParsing(true);
     try {
-      // Send as form data, not JSON
-      const formDataToSend = new FormData();
-      formDataToSend.append('url', formData.job_url.trim());
-
-      const response = await api.post('/applications/parse-url/', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await api.post('/parse-job-url/', {
+        url: formData.job_url,
       });
 
-      const jobDetails = response.data;
-
-      // Auto-fill form fields with parsed data
+      const parsedData = response.data;
       setFormData(prev => ({
         ...prev,
-        company_name: jobDetails.company || prev.company_name,
-        job_title: jobDetails.position || prev.job_title,
-        // Generate job_id from company and position if not provided
-        job_id:
-          jobDetails.job_id ||
-          `${(jobDetails.company || prev.company_name).toLowerCase().replace(/\s+/g, '-')}-${(jobDetails.position || prev.job_title).toLowerCase().replace(/\s+/g, '-')}-${Date.now()}` ||
-          prev.job_id,
+        company_name: parsedData.company_name || prev.company_name,
+        job_title: parsedData.job_title || prev.job_title,
+        job_id: parsedData.job_id || prev.job_id,
       }));
-
-      // Clear any errors for fields that were populated
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        if (jobDetails.company) delete newErrors.company_name;
-        if (jobDetails.position) delete newErrors.job_title;
-        return newErrors;
-      });
     } catch (error: any) {
       console.error('Error parsing job URL:', error);
       let errorMessage = 'Failed to parse job URL. Please try again.';
 
-      // Properly extract error message
       if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.data) {
@@ -370,6 +420,20 @@ export default function ApplicationForm({
     }
   };
 
+  const navigateToNextTab = () => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    if (currentIndex < tabs.length - 1) {
+      setActiveTab(tabs[currentIndex + 1].id);
+    }
+  };
+
+  const navigateToPrevTab = () => {
+    const currentIndex = tabs.findIndex(tab => tab.id === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(tabs[currentIndex - 1].id);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -384,315 +448,410 @@ export default function ApplicationForm({
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
           onClick={e => e.stopPropagation()}
-          className='bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto'
+          className='bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-[600px] flex flex-col'
         >
-          <form onSubmit={handleSubmit} className='p-8'>
-            {/* Header */}
-            <div className='flex items-center justify-between mb-8'>
-              <div className='flex items-center gap-4'>
-                <div className='p-3 rounded-xl bg-blue-100 border border-blue-200'>
-                  <Briefcase className='h-6 w-6 text-blue-600' />
-                </div>
-                <div>
-                  <h2 className='text-2xl font-bold text-neutral-900'>
-                    {editingApplication ? 'Edit Application' : 'Add New Application'}
-                  </h2>
-                  <p className='text-neutral-600 text-sm'>
-                    {editingApplication
-                      ? 'Update your job application details'
-                      : 'Track your job application journey'}
-                  </p>
-                </div>
+          {/* Header */}
+          <div className='flex items-center justify-between p-6 border-b border-neutral-200 flex-shrink-0'>
+            <div className='flex items-center gap-3'>
+              <div className='p-3 rounded-xl bg-blue-100 border border-blue-200'>
+                <Briefcase className='h-6 w-6 text-blue-600' />
               </div>
-              <button
-                type='button'
-                onClick={handleClose}
-                className='p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200 focus-ring'
-              >
-                <X className='h-5 w-5' />
-              </button>
-            </div>
-
-            <div className='space-y-6'>
-              {/* URL Parser */}
               <div>
-                <div className='flex items-center gap-2 mb-3'>
-                  <Zap className='h-4 w-4 text-blue-600' />
-                  <label className='form-label mb-0'>Job Posting URL *</label>
-                </div>
-                <div className='flex gap-2'>
-                  <input
-                    type='url'
-                    value={formData.job_url}
-                    onChange={e => handleInputChange('job_url', e.target.value)}
-                    className={`form-input flex-1 ${errors.job_url ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    placeholder='https://company.com/careers/job-posting'
-                  />
-                  <button
-                    type='button'
-                    onClick={handleParseJobUrl}
-                    disabled={isParsing || !formData.job_url.trim()}
-                    className='btn-accent px-3 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed'
-                    title='Parse job details with AI'
-                  >
-                    {isParsing ? (
-                      <div className='flex items-center gap-2'>
-                        <div className='loading-accent' />
-                        <span>Parsing...</span>
-                      </div>
-                    ) : (
-                      <div className='flex items-center gap-2'>
-                        <Zap className='h-4 w-4' />
-                        <span>Parse</span>
-                      </div>
-                    )}
-                  </button>
-                </div>
-                {errors.job_url && <p className='text-red-600 text-sm mt-1'>{errors.job_url}</p>}
-                <p className='text-xs text-neutral-500 mt-1'>
-                  Paste a job URL and click "Parse" to auto-fill the form using AI
+                <h2 className='text-2xl font-bold text-neutral-900'>
+                  {editingApplication ? 'Edit Application' : 'Add New Application'}
+                </h2>
+                <p className='text-neutral-600 text-sm'>
+                  {editingApplication
+                    ? 'Update your job application details'
+                    : 'Track your job application journey'}
                 </p>
               </div>
+            </div>
+            <button
+              type='button'
+              onClick={handleClose}
+              className='p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200 focus-ring'
+            >
+              <X className='h-5 w-5' />
+            </button>
+          </div>
 
-              {/* Main Form Fields */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div>
-                  <label className='form-label'>Company Name *</label>
-                  <input
-                    type='text'
-                    value={formData.company_name}
-                    onChange={e => handleInputChange('company_name', e.target.value)}
-                    className={`form-input ${errors.company_name ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    placeholder='Google, Microsoft'
-                  />
-                  {errors.company_name && (
-                    <p className='text-red-600 text-sm mt-1'>{errors.company_name}</p>
-                  )}
-                </div>
+          {/* Tab Navigation */}
+          <div className='px-6 py-3 border-b border-neutral-100 flex-shrink-0'>
+            <div className='flex space-x-1'>
+              {tabs.map((tab) => {
+                const completionStatus = getTabCompletionStatus(tab);
+                const isActive = activeTab === tab.id;
+                const hasErrors = tab.fields.some(field => errors[field]);
 
-                <div>
-                  <label className='form-label'>Job Title *</label>
-                  <input
-                    type='text'
-                    value={formData.job_title}
-                    onChange={e => handleInputChange('job_title', e.target.value)}
-                    className={`form-input ${errors.job_title ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    placeholder='Software Engineer'
-                  />
-                  {errors.job_title && (
-                    <p className='text-red-600 text-sm mt-1'>{errors.job_title}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className='form-label'>Job ID *</label>
-                  <input
-                    type='text'
-                    value={formData.job_id}
-                    onChange={e => handleInputChange('job_id', e.target.value)}
-                    className={`form-input ${errors.job_id ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    placeholder='REQ-2024-001 or unique identifier'
-                  />
-                  {errors.job_id && <p className='text-red-600 text-sm mt-1'>{errors.job_id}</p>}
-                </div>
-
-                <div>
-                  <label className='form-label'>Email Used *</label>
-                  <input
-                    type='email'
-                    value={formData.email_used}
-                    onChange={e => handleInputChange('email_used', e.target.value)}
-                    className={`form-input ${errors.email_used ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    placeholder='your.email@example.com'
-                  />
-                  {errors.email_used && (
-                    <p className='text-red-600 text-sm mt-1'>{errors.email_used}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className='form-label'>Application Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={e => handleInputChange('status', e.target.value)}
-                    className='form-input'
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${getTabButtonClasses(
+                      isActive,
+                      hasErrors,
+                    )}`}
                   >
-                    <option value='applied'>Applied</option>
-                    <option value='interview'>Interview</option>
-                    <option value='offer'>Offer</option>
-                    <option value='rejected'>Rejected</option>
-                    <option value='withdrawn'>Withdrawn</option>
-                    <option value='pending'>Pending</option>
-                  </select>
-                </div>
+                    <tab.icon className='h-4 w-4' />
+                    <span>{tab.label}</span>
+                    {completionStatus === 'complete' && !hasErrors && (
+                      <CheckCircle className='h-4 w-4 text-green-500' />
+                    )}
+                    {hasErrors && (
+                      <Circle className='h-4 w-4 text-red-500' />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-                <div>
-                  <label className='form-label'>Priority</label>
-                  <select
-                    value={formData.priority}
-                    onChange={e =>
-                      handleInputChange('priority', e.target.value as ApplicationPriority)
-                    }
-                    className='form-input'
-                  >
-                    <option value={ApplicationPriority.LOW}>Low</option>
-                    <option value={ApplicationPriority.MEDIUM}>Medium</option>
-                    <option value={ApplicationPriority.HIGH}>High</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className='form-label'>Date Applied *</label>
-                  <input
-                    type='date'
-                    value={formData.date_applied}
-                    onChange={e => handleInputChange('date_applied', e.target.value)}
-                    className={`form-input ${errors.date_applied ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                  />
-                  {errors.date_applied && (
-                    <p className='text-red-600 text-sm mt-1'>{errors.date_applied}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div>
-                  <label className='form-label'>Portal URL (Optional)</label>
-                  <input
-                    type='url'
-                    value={formData.portal_url}
-                    onChange={e => handleInputChange('portal_url', e.target.value)}
-                    className={`form-input ${errors.portal_url ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
-                    placeholder='https://company.workday.com'
-                  />
-                  {errors.portal_url && (
-                    <p className='text-red-600 text-sm mt-1'>{errors.portal_url}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className='form-label'>Application Source</label>
-                  <select
-                    value={formData.source}
-                    onChange={e => handleInputChange('source', e.target.value)}
-                    className='form-input'
-                  >
-                    <option value='linkedin'>LinkedIn</option>
-                    <option value='indeed'>Indeed</option>
-                    <option value='company_website'>Company Website</option>
-                    <option value='angelist'>AngelList</option>
-                    <option value='yc'>Y Combinator</option>
-                    <option value='glassdoor'>Glassdoor</option>
-                    <option value='other'>Other</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* File Upload Section */}
-              <div className='border-t border-neutral-200 pt-6'>
-                <h3 className='text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2'>
-                  <Upload className='h-5 w-5 text-blue-600' />
-                  Document Upload
-                </h3>
-
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                  <div>
-                    <label className='form-label'>
-                      Resume *{' '}
-                      {editingApplication && (
-                        <span className='text-sm text-neutral-500'>(optional for updates)</span>
-                      )}
-                    </label>
-                    <div className='mt-1'>
-                      <input
-                        type='file'
-                        accept='.pdf,.doc,.docx'
-                        onChange={e => handleFileChange('resume', e.target.files?.[0] || null)}
-                        className='hidden'
-                        id='resume-upload'
-                      />
-                      <label
-                        htmlFor='resume-upload'
-                        className={`form-input cursor-pointer flex items-center justify-center gap-3 h-20 border-2 border-dashed hover:border-blue-300 hover:bg-blue-50/50 transition-colors ${
-                          errors.resume ? 'border-red-300 bg-red-50' : 'border-neutral-300'
-                        }`}
-                      >
-                        <FileText className='h-6 w-6 text-neutral-400' />
-                        <div className='text-center'>
-                          <p className='text-sm text-neutral-600'>
-                            {formData.resume ? formData.resume.name : 'Choose resume file'}
-                          </p>
-                          <p className='text-xs text-neutral-500'>PDF, DOC, DOCX</p>
+          {/* Form Content */}
+          <form onSubmit={handleSubmit} className='flex-1 flex flex-col min-h-0'>
+            <div className='flex-1 overflow-y-auto p-6 min-h-[350px]'>
+              <AnimatePresence mode='wait'>
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className='h-full'
+                >
+                  {/* Basic Info Tab */}
+                  {activeTab === 'basic' && (
+                    <div className='space-y-6 h-full'>
+                      {/* URL Parser */}
+                      <div className='p-4 rounded-lg bg-blue-50 border border-blue-200'>
+                        <div className='flex items-center gap-2 mb-3'>
+                          <Zap className='h-5 w-5 text-blue-600' />
+                          <label className='form-label mb-0 text-sm font-medium'>Smart Job URL Parser</label>
                         </div>
-                      </label>
-                      {errors.resume && (
-                        <p className='text-red-600 text-sm mt-1'>{errors.resume}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className='form-label'>Cover Letter (Optional)</label>
-                    <div className='mt-1'>
-                      <input
-                        type='file'
-                        accept='.pdf,.doc,.docx'
-                        onChange={e =>
-                          handleFileChange('cover_letter', e.target.files?.[0] || null)
-                        }
-                        className='hidden'
-                        id='cover-letter-upload'
-                      />
-                      <label
-                        htmlFor='cover-letter-upload'
-                        className='form-input cursor-pointer flex items-center justify-center gap-3 h-20 border-2 border-dashed border-neutral-300 hover:border-blue-300 hover:bg-blue-50/50 transition-colors'
-                      >
-                        <FileText className='h-6 w-6 text-neutral-400' />
-                        <div className='text-center'>
-                          <p className='text-sm text-neutral-600'>
-                            {formData.cover_letter
-                              ? formData.cover_letter.name
-                              : 'Choose cover letter'}
-                          </p>
-                          <p className='text-xs text-neutral-500'>PDF, DOC, DOCX</p>
+                        <div className='flex gap-3'>
+                          <input
+                            type='url'
+                            value={formData.job_url}
+                            onChange={e => handleInputChange('job_url', e.target.value)}
+                            className={`form-input flex-1 text-sm ${errors.job_url ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            placeholder='https://company.com/careers/job-posting'
+                          />
+                          <button
+                            type='button'
+                            onClick={handleParseJobUrl}
+                            disabled={isParsing || !formData.job_url.trim()}
+                            className='btn-accent px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shrink-0'
+                            title='Parse job details with AI'
+                          >
+                            {isParsing ? (
+                              <div className='flex items-center gap-2'>
+                                <div className='loading-accent' />
+                                <span>Parsing...</span>
+                              </div>
+                            ) : (
+                              <div className='flex items-center gap-2'>
+                                <Zap className='h-4 w-4' />
+                                <span>Parse</span>
+                              </div>
+                            )}
+                          </button>
                         </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                        {errors.job_url && <p className='text-red-600 text-sm mt-2'>{errors.job_url}</p>}
+                        <p className='text-neutral-600 text-sm mt-2'>
+                          Paste a job URL and click "Parse" to auto-fill the form using AI
+                        </p>
+                      </div>
 
-              <div>
-                <label className='form-label'>Notes (Optional)</label>
-                <textarea
-                  value={formData.notes}
-                  onChange={e => handleInputChange('notes', e.target.value)}
-                  rows={3}
-                  className='form-input resize-none'
-                  placeholder='Additional notes about this application...'
-                />
-              </div>
+                      {/* Basic Form Fields */}
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                          <label className='form-label text-sm font-medium'>Company Name *</label>
+                          <input
+                            type='text'
+                            value={formData.company_name}
+                            onChange={e => handleInputChange('company_name', e.target.value)}
+                            className={`form-input text-sm ${errors.company_name ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            placeholder='Google, Microsoft'
+                          />
+                          {errors.company_name && (
+                            <p className='text-red-600 text-sm mt-1'>{errors.company_name}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Job Title *</label>
+                          <input
+                            type='text'
+                            value={formData.job_title}
+                            onChange={e => handleInputChange('job_title', e.target.value)}
+                            className={`form-input text-sm ${errors.job_title ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            placeholder='Software Engineer'
+                          />
+                          {errors.job_title && (
+                            <p className='text-red-600 text-sm mt-1'>{errors.job_title}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Job ID *</label>
+                          <input
+                            type='text'
+                            value={formData.job_id}
+                            onChange={e => handleInputChange('job_id', e.target.value)}
+                            className={`form-input text-sm ${errors.job_id ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            placeholder='REQ-2024-001 or unique identifier'
+                          />
+                          {errors.job_id && <p className='text-red-600 text-sm mt-1'>{errors.job_id}</p>}
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Email Used *</label>
+                          <input
+                            type='email'
+                            value={formData.email_used}
+                            onChange={e => handleInputChange('email_used', e.target.value)}
+                            className={`form-input text-sm ${errors.email_used ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            placeholder='your.email@example.com'
+                          />
+                          {errors.email_used && (
+                            <p className='text-red-600 text-sm mt-1'>{errors.email_used}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Details Tab */}
+                  {activeTab === 'details' && (
+                    <div className='space-y-6 h-full'>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                          <label className='form-label text-sm font-medium'>Application Status</label>
+                          <select
+                            value={formData.status}
+                            onChange={e => handleInputChange('status', e.target.value)}
+                            className='form-input text-sm'
+                          >
+                            <option value='applied'>Applied</option>
+                            <option value='interview'>Interview</option>
+                            <option value='offer'>Offer</option>
+                            <option value='rejected'>Rejected</option>
+                            <option value='withdrawn'>Withdrawn</option>
+                            <option value='pending'>Pending</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Priority</label>
+                          <select
+                            value={formData.priority}
+                            onChange={e =>
+                              handleInputChange('priority', e.target.value as ApplicationPriority)
+                            }
+                            className='form-input text-sm'
+                          >
+                            <option value={ApplicationPriority.LOW}>Low</option>
+                            <option value={ApplicationPriority.MEDIUM}>Medium</option>
+                            <option value={ApplicationPriority.HIGH}>High</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Date Applied *</label>
+                          <input
+                            type='date'
+                            value={formData.date_applied}
+                            onChange={e => handleInputChange('date_applied', e.target.value)}
+                            className={`form-input text-sm ${errors.date_applied ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                          />
+                          {errors.date_applied && (
+                            <p className='text-red-600 text-sm mt-1'>{errors.date_applied}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Application Source</label>
+                          <select
+                            value={formData.source}
+                            onChange={e => handleInputChange('source', e.target.value)}
+                            className='form-input text-sm'
+                          >
+                            <option value='linkedin'>LinkedIn</option>
+                            <option value='indeed'>Indeed</option>
+                            <option value='company_website'>Company Website</option>
+                            <option value='angelist'>AngelList</option>
+                            <option value='yc'>Y Combinator</option>
+                            <option value='glassdoor'>Glassdoor</option>
+                            <option value='other'>Other</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className='form-label text-sm font-medium'>Portal URL (Optional)</label>
+                        <input
+                          type='url'
+                          value={formData.portal_url}
+                          onChange={e => handleInputChange('portal_url', e.target.value)}
+                          className={`form-input text-sm ${errors.portal_url ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                          placeholder='https://company.workday.com'
+                        />
+                        {errors.portal_url && (
+                          <p className='text-red-600 text-sm mt-1'>{errors.portal_url}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Documents Tab */}
+                  {activeTab === 'documents' && (
+                    <div className='space-y-6 h-full'>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                        <div>
+                          <label className='form-label text-sm font-medium'>
+                            Resume *{' '}
+                            {editingApplication && (
+                              <span className='text-sm text-neutral-500'>(optional for updates)</span>
+                            )}
+                          </label>
+                          <div className='mt-2'>
+                            <input
+                              type='file'
+                              accept='.pdf,.doc,.docx'
+                              onChange={e => handleFileChange('resume', e.target.files?.[0] || null)}
+                              className='hidden'
+                              id='resume-upload'
+                            />
+                            <label
+                              htmlFor='resume-upload'
+                              className={`form-input cursor-pointer flex items-center justify-center gap-3 h-20 border-2 border-dashed hover:border-blue-300 hover:bg-blue-50/50 transition-colors ${
+                                errors.resume ? 'border-red-300 bg-red-50' : 'border-neutral-300'
+                              }`}
+                            >
+                              <FileText className='h-5 w-5 text-neutral-400' />
+                              <div className='text-center'>
+                                <p className='text-sm text-neutral-600'>
+                                  {formData.resume ? formData.resume.name : 'Choose resume file'}
+                                </p>
+                                <p className='text-xs text-neutral-500'>PDF, DOC, DOCX</p>
+                              </div>
+                            </label>
+                            {errors.resume && (
+                              <p className='text-red-600 text-sm mt-1'>{errors.resume}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className='form-label text-sm font-medium'>Cover Letter (Optional)</label>
+                          <div className='mt-2'>
+                            <input
+                              type='file'
+                              accept='.pdf,.doc,.docx'
+                              onChange={e =>
+                                handleFileChange('cover_letter', e.target.files?.[0] || null)
+                              }
+                              className='hidden'
+                              id='cover-letter-upload'
+                            />
+                            <label
+                              htmlFor='cover-letter-upload'
+                              className='form-input cursor-pointer flex items-center justify-center gap-3 h-20 border-2 border-dashed border-neutral-300 hover:border-blue-300 hover:bg-blue-50/50 transition-colors'
+                            >
+                              <FileText className='h-5 w-5 text-neutral-400' />
+                              <div className='text-center'>
+                                <p className='text-sm text-neutral-600'>
+                                  {formData.cover_letter
+                                    ? formData.cover_letter.name
+                                    : 'Choose cover letter'}
+                                </p>
+                                <p className='text-xs text-neutral-500'>PDF, DOC, DOCX</p>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes Tab */}
+                  {activeTab === 'notes' && (
+                    <div className='h-full'>
+                      <label className='form-label text-sm font-medium'>Notes (Optional)</label>
+                      <textarea
+                        value={formData.notes}
+                        onChange={e => handleInputChange('notes', e.target.value)}
+                        rows={10}
+                        className='form-input resize-none text-sm w-full mt-2'
+                        placeholder='Add any additional notes about this application, such as contact information, interview details, or follow-up reminders...'
+                      />
+                    </div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Form Actions */}
-            <div className='flex items-center justify-end gap-4 mt-8 pt-6 border-t border-neutral-200'>
-              <button type='button' onClick={handleClose} className='btn-secondary focus-ring'>
-                Cancel
-              </button>
-              <button
-                type='submit'
-                disabled={isSubmitting}
-                className='btn-primary focus-ring relative min-w-[140px] disabled:opacity-75 disabled:cursor-not-allowed'
-              >
-                {isSubmitting ? (
-                  <div className='flex items-center justify-center'>
-                    <div className='loading-accent mr-2' />
-                    <span>Saving...</span>
-                  </div>
-                ) : (
-                  <span>{editingApplication ? 'Update Application' : 'Add Application'}</span>
-                )}
-              </button>
+            {/* Form Navigation & Actions */}
+            <div className='p-6 border-t border-neutral-200 bg-neutral-50/50 flex-shrink-0'>
+              <div className='flex items-center justify-between'>
+                {/* Previous Button */}
+                <button
+                  type='button'
+                  onClick={navigateToPrevTab}
+                  disabled={activeTab === 'basic'}
+                  className='btn-secondary disabled:opacity-50 disabled:cursor-not-allowed text-sm px-4 py-2'
+                >
+                  Previous
+                </button>
+
+                {/* Tab Indicators */}
+                <div className='flex items-center gap-3'>
+                  {tabs.map((tab, index) => {
+                    const isActive = tab.id === activeTab;
+                    const isPast = tabs.findIndex(t => t.id === activeTab) > index;
+                    const completionStatus = getTabCompletionStatus(tab);
+
+                    return (
+                      <div
+                        key={tab.id}
+                        className={`w-3 h-3 rounded-full transition-all duration-200 ${getTabIndicatorClasses(isActive, isPast, completionStatus)}`}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Next/Submit Button */}
+                <div className='flex items-center gap-3'>
+                  <button type='button' onClick={handleClose} className='btn-secondary text-sm px-4 py-2'>
+                    Cancel
+                  </button>
+
+                  {activeTab === 'notes' ? (
+                    <button
+                      type='submit'
+                      disabled={isSubmitting}
+                      className='btn-primary relative min-w-[120px] disabled:opacity-75 disabled:cursor-not-allowed text-sm px-6 py-2'
+                    >
+                      {isSubmitting ? (
+                        <div className='flex items-center justify-center'>
+                          <div className='loading-accent mr-2' />
+                          <span>Saving...</span>
+                        </div>
+                      ) : (
+                        <span>{editingApplication ? 'Update Application' : 'Add Application'}</span>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      type='button'
+                      onClick={navigateToNextTab}
+                      className='btn-primary text-sm px-6 py-2'
+                    >
+                      Next
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </form>
         </motion.div>
