@@ -38,7 +38,6 @@ class Application(Base):
     cover_letter_file_path = Column(String, nullable=True)
     source = Column(Enum(ApplicationSource), nullable=False, index=True)
     notes = Column(Text, nullable=True)
-    max_applications = Column(String, nullable=True)  # For tracking limits
     created_at = Column(DateTime, default=func.now(), index=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 

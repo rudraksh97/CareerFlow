@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Calendar, ExternalLink, Building, User, Mail, FileText, Upload } from 'lucide-react'
+import { X, Calendar, ExternalLink, Building, User, Mail, FileText, Upload, Globe, Wand2 } from 'lucide-react'
 import { api } from '@/services/api'
 
 interface ApplicationFormProps {
   isOpen: boolean
   onClose: () => void
+  editingApplication?: any
 }
 
 interface FormData {
@@ -19,7 +20,6 @@ interface FormData {
   email_used: string
   source: string
   notes: string
-  max_applications: string
 }
 
 const initialFormData: FormData = {
@@ -32,11 +32,10 @@ const initialFormData: FormData = {
   date_applied: new Date().toISOString().split('T')[0],
   email_used: '',
   source: 'company_website',
-  notes: '',
-  max_applications: ''
+  notes: ''
 }
 
-export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProps) {
+export default function ApplicationForm({ isOpen, onClose, editingApplication }: ApplicationFormProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [errors, setErrors] = useState<Partial<FormData & { resume: string, cover_letter: string }>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -46,7 +45,37 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
   const [coverLetterFileName, setCoverLetterFileName] = useState<string>('')
   const queryClient = useQueryClient()
   const [isFetchingCompanyInfo, setIsFetchingCompanyInfo] = useState(false);
+  const [urlToParse, setUrlToParse] = useState<string>('')
+  const [isParsing, setIsParsing] = useState(false)
+  const [parseError, setParseError] = useState<string>('')
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false)
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [isSavingApiKey, setIsSavingApiKey] = useState(false)
+  const [apiKeyError, setApiKeyError] = useState('')
 
+  // Set form data when editing application
+  useEffect(() => {
+    if (editingApplication) {
+      setFormData({
+        company_name: editingApplication.company_name || '',
+        job_title: editingApplication.job_title || '',
+        job_id: editingApplication.job_id || '',
+        job_url: editingApplication.job_url || '',
+        portal_url: editingApplication.portal_url || '',
+        status: editingApplication.status || 'applied',
+        date_applied: editingApplication.date_applied ? editingApplication.date_applied.split('T')[0] : new Date().toISOString().split('T')[0],
+        email_used: editingApplication.email_used || '',
+        source: editingApplication.source || 'company_website',
+        notes: editingApplication.notes || ''
+      })
+      setResumeFileName(editingApplication.resume_filename || '')
+      setCoverLetterFileName(editingApplication.cover_letter_filename || '')
+    } else {
+      setFormData(initialFormData)
+      setResumeFileName('')
+      setCoverLetterFileName('')
+    }
+  }, [editingApplication])
 
   const createApplicationMutation = useMutation({
     mutationFn: async (data: { formData: FormData; resumeFile: File; coverLetterFile: File | null }) => {
@@ -80,6 +109,38 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
     onError: (error: any) => {
       console.error('Error creating application:', error)
       alert('Failed to create application. Please try again.')
+    }
+  })
+
+  const updateApplicationMutation = useMutation({
+    mutationFn: async (data: { formData: FormData; resumeFile?: File; coverLetterFile?: File | null; applicationId: string }) => {
+      // For updates, we use a different approach since backend expects form data for creation
+      // but JSON for updates. We'll need to check if files are updated and handle accordingly.
+      
+      const updateData = {
+        company_name: data.formData.company_name,
+        job_title: data.formData.job_title,
+        job_id: data.formData.job_id,
+        job_url: data.formData.job_url,
+        portal_url: data.formData.portal_url || null,
+        status: data.formData.status,
+        date_applied: data.formData.date_applied,
+        email_used: data.formData.email_used,
+        source: data.formData.source,
+        notes: data.formData.notes || null
+      }
+
+      return api.put(`/applications/${data.applicationId}`, updateData)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      handleClose()
+    },
+    onError: (error: any) => {
+      console.error('Error updating application:', error)
+      alert('Failed to update application. Please try again.')
     }
   })
 
@@ -122,6 +183,103 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
     fetchCompanyInfo();
   }, [debouncedCompanyName]);
 
+  const parseJobUrl = async () => {
+    if (!urlToParse.trim()) {
+      setParseError('Please enter a URL to parse')
+      return
+    }
+
+    if (!isValidUrl(urlToParse)) {
+      setParseError('Please enter a valid URL')
+      return
+    }
+
+    setIsParsing(true)
+    setParseError('')
+
+    try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('url', urlToParse)
+
+      const response = await api.post('/applications/parse-url/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      const jobData = response.data
+
+      // Auto-fill form with parsed data
+      setFormData(prev => ({
+        ...prev,
+        company_name: jobData.company_name || prev.company_name,
+        job_title: jobData.job_title || prev.job_title,
+        job_id: jobData.job_id || prev.job_id,
+        job_url: jobData.job_url || urlToParse,
+      }))
+
+      // Clear URL input after successful parse
+      setUrlToParse('')
+      
+    } catch (error: any) {
+      console.error('Error parsing URL:', error)
+      
+      if (error.response?.status === 400) {
+        const errorMessage = error.response.data?.detail || 'Unable to parse the job URL'
+        
+        // Check if it's an API key issue and show the modal
+        if (errorMessage.includes('API key')) {
+          setShowApiKeyModal(true)
+          setParseError('')
+        } else {
+          // Enhanced error message for parsing failures
+          if (errorMessage.includes('JavaScript') || errorMessage.includes('dynamic')) {
+            setParseError('This job page uses dynamic content that cannot be automatically parsed. You can manually enter the job details below.')
+          } else {
+            setParseError(errorMessage)
+          }
+        }
+      } else {
+        setParseError('An error occurred while parsing the URL. Please try again.')
+      }
+    } finally {
+      setIsParsing(false)
+    }
+  }
+
+  const saveApiKey = async () => {
+    if (!apiKeyInput.trim()) {
+      setApiKeyError('Please enter an API key')
+      return
+    }
+
+    setIsSavingApiKey(true)
+    setApiKeyError('')
+
+    try {
+      const response = await api.post('/settings/', {
+        key: 'openai_api_key',
+        value: apiKeyInput.trim()
+      })
+
+      if (response.status === 200) {
+        setShowApiKeyModal(false)
+        setApiKeyInput('')
+        setApiKeyError('')
+        
+        // Try parsing the URL again after saving the API key
+        if (urlToParse.trim()) {
+          parseJobUrl()
+        }
+      }
+    } catch (error: any) {
+      console.error('Error saving API key:', error)
+      setApiKeyError('Failed to save API key. Please try again.')
+    } finally {
+      setIsSavingApiKey(false)
+    }
+  }
+
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData & { resume: string, cover_letter: string }> = {}
 
@@ -153,7 +311,7 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
       newErrors.email_used = 'Please enter a valid email'
     }
 
-    if (!resumeFile) {
+    if (!resumeFile && !editingApplication) {
       newErrors.resume = 'Resume file is required'
     }
 
@@ -204,15 +362,30 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm() || !resumeFile) return
+    if (!validateForm()) return
+    
+    // For new applications, resume is required
+    if (!editingApplication && !resumeFile) return
 
     setIsSubmitting(true)
     try {
-      await createApplicationMutation.mutateAsync({ 
-        formData, 
-        resumeFile, 
-        coverLetterFile 
-      })
+      if (editingApplication) {
+        // Update existing application
+        await updateApplicationMutation.mutateAsync({ 
+          formData, 
+          resumeFile: resumeFile || undefined,
+          coverLetterFile: coverLetterFile || undefined,
+          applicationId: editingApplication.id
+        })
+      } else {
+        // Create new application
+        if (!resumeFile) return
+        await createApplicationMutation.mutateAsync({ 
+          formData, 
+          resumeFile, 
+          coverLetterFile 
+        })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -226,6 +399,12 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
     setResumeFileName('')
     setCoverLetterFile(null)
     setCoverLetterFileName('')
+    setUrlToParse('')
+    setParseError('')
+    setIsParsing(false)
+    setShowApiKeyModal(false)
+    setApiKeyInput('')
+    setApiKeyError('')
     onClose()
   }
 
@@ -246,8 +425,12 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
           {/* Header */}
           <div className="flex items-center justify-between mb-10">
             <div>
-              <h2 className="text-2xl font-bold text-neutral-900">Add New Application</h2>
-              <p className="text-neutral-600 mt-1">Track your job application details</p>
+              <h2 className="text-2xl font-bold text-neutral-900">
+                {editingApplication ? 'Edit Application' : 'Add New Application'}
+              </h2>
+              <p className="text-neutral-600 mt-1">
+                {editingApplication ? 'Update your job application details' : 'Track your job application details'}
+              </p>
             </div>
             <button
               onClick={handleClose}
@@ -255,6 +438,61 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
             >
               <X className="h-6 w-6" />
             </button>
+          </div>
+
+          {/* URL Parsing Section */}
+          <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Wand2 className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-neutral-900">Auto-fill from Job URL</h3>
+                <p className="text-sm text-neutral-600">Paste a job posting URL to automatically extract details</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="url"
+                    value={urlToParse}
+                    onChange={(e) => {
+                      setUrlToParse(e.target.value)
+                      if (parseError) setParseError('')
+                    }}
+                    className="input-field"
+                    placeholder="https://company.com/careers/software-engineer"
+                    disabled={isParsing}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={parseJobUrl}
+                  disabled={isParsing || !urlToParse.trim()}
+                  className="btn btn-primary px-4 py-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isParsing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Parsing...
+                    </>
+                  ) : (
+                    <>
+                      <Globe className="h-4 w-4 mr-2" />
+                      Parse URL
+                    </>
+                  )}
+                </button>
+              </div>
+              
+              {parseError && (
+                <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                  {parseError}
+                </div>
+              )}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8" id="application-form">
@@ -418,26 +656,19 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
                   <p className="mt-2 text-sm text-red-600">{errors.email_used}</p>
                 )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Max Applications
-                </label>
-                <input
-                  type="text"
-                  value={formData.max_applications}
-                  onChange={(e) => handleInputChange('max_applications', e.target.value)}
-                  className="input-field"
-                  placeholder="e.g., 5 per month"
-                />
-              </div>
             </div>
 
             {/* Resume & Cover Letter Upload */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Resume File *
+                  Resume File {editingApplication ? '' : '*'}
                 </label>
+                {editingApplication && editingApplication.resume_filename && (
+                  <p className="text-xs text-neutral-600 mb-2">
+                    Current file: {editingApplication.resume_filename}
+                  </p>
+                )}
                 <div className="relative">
                     <input
                       type="file"
@@ -455,7 +686,7 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
                       <div className="text-center">
                         <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
                         <p className="text-sm text-neutral-600">
-                          {resumeFileName ? resumeFileName : 'Click to upload resume'}
+                          {resumeFileName ? resumeFileName : (editingApplication ? 'Click to upload new resume' : 'Click to upload resume')}
                         </p>
                         <p className="text-xs text-neutral-500 mt-1">
                           (PDF, DOC, DOCX)
@@ -471,6 +702,11 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Cover Letter File
                 </label>
+                {editingApplication && editingApplication.cover_letter_filename && (
+                  <p className="text-xs text-neutral-600 mb-2">
+                    Current file: {editingApplication.cover_letter_filename}
+                  </p>
+                )}
                 <div className="relative">
                     <input
                       type="file"
@@ -488,7 +724,7 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
                       <div className="text-center">
                         <Upload className="h-8 w-8 text-neutral-400 mx-auto mb-2" />
                         <p className="text-sm text-neutral-600">
-                          {coverLetterFileName ? coverLetterFileName : 'Click to upload cover letter'}
+                          {coverLetterFileName ? coverLetterFileName : (editingApplication ? 'Click to upload new cover letter' : 'Click to upload cover letter')}
                         </p>
                         <p className="text-xs text-neutral-500 mt-1">
                           (Optional)
@@ -535,11 +771,82 @@ export default function ApplicationForm({ isOpen, onClose }: ApplicationFormProp
               className="btn btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating...' : 'Create Application'}
+              {isSubmitting 
+                ? (editingApplication ? 'Updating...' : 'Creating...') 
+                : (editingApplication ? 'Update Application' : 'Create Application')
+              }
             </button>
           </div>
         </div>
       </div>
+
+      {/* API Key Configuration Modal */}
+      {showApiKeyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowApiKeyModal(false)}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Wand2 className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900">Configure OpenAI API Key</h3>
+                <p className="text-sm text-neutral-600">Enter your OpenAI API key to enable URL parsing</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  OpenAI API Key *
+                </label>
+                <input
+                  type="password"
+                  value={apiKeyInput}
+                  onChange={(e) => {
+                    setApiKeyInput(e.target.value)
+                    if (apiKeyError) setApiKeyError('')
+                  }}
+                  className={`input-field ${apiKeyError ? 'border-red-500' : ''}`}
+                  placeholder="sk-..."
+                  disabled={isSavingApiKey}
+                />
+                <p className="text-xs text-neutral-500 mt-1">
+                  Your API key is stored securely and used only for parsing job URLs.
+                </p>
+                {apiKeyError && (
+                  <p className="mt-2 text-sm text-red-600">{apiKeyError}</p>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowApiKeyModal(false)}
+                  className="btn btn-secondary"
+                  disabled={isSavingApiKey}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveApiKey}
+                  className="btn btn-primary"
+                  disabled={isSavingApiKey || !apiKeyInput.trim()}
+                >
+                  {isSavingApiKey ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    'Save & Parse URL'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

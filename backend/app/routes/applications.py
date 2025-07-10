@@ -11,6 +11,8 @@ from pathlib import Path
 
 from ..models.database import get_db
 from ..models.application import Application, ApplicationStatus, ApplicationSource
+from ..models.setting import Setting as SettingModel
+from ..services.openai_service import OpenAIService
 from ..schemas import (
     ApplicationCreate, 
     ApplicationUpdate, 
@@ -56,7 +58,6 @@ async def create_application(
     email_used: str = Form(...),
     source: ApplicationSource = Form(...),
     notes: Optional[str] = Form(None),
-    max_applications: Optional[str] = Form(None),
     resume: UploadFile = File(...),
     cover_letter: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
@@ -106,8 +107,7 @@ async def create_application(
         cover_letter_filename=cover_letter_filename,
         cover_letter_file_path=cover_letter_file_path,
         source=source,
-        notes=notes,
-        max_applications=max_applications
+        notes=notes
     )
     
     db.add(db_application)
@@ -279,4 +279,66 @@ def get_application_analytics(db: Session = Depends(get_db)):
         "applications_by_status": status_counts,
         "applications_by_source": source_counts,
         "success_rate": round(success_rate, 2)
-    } 
+    }
+
+@router.post("/parse-url/")
+async def parse_job_url(
+    url: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Parse job URL using OpenAI to extract job details"""
+    
+    print(f"[DEBUG] Attempting to parse URL: {url}")
+    
+    # Get OpenAI API key from settings
+    api_key_setting = db.query(SettingModel).filter(SettingModel.key == "openai_api_key").first()
+    if not api_key_setting or not api_key_setting.value:
+        print("[DEBUG] No API key found in settings")
+        raise HTTPException(
+            status_code=400, 
+            detail="OpenAI API key not configured. Please set your API key in Settings."
+        )
+    
+    print(f"[DEBUG] Found API key in settings (length: {len(api_key_setting.value)})")
+    
+    try:
+        # Initialize OpenAI service
+        openai_service = OpenAIService(api_key_setting.value)
+        print("[DEBUG] OpenAI service initialized")
+        
+        # Test API key validity
+        print("[DEBUG] Testing API key validity...")
+        api_key_valid = openai_service.test_api_key()
+        print(f"[DEBUG] API key test result: {api_key_valid}")
+        
+        if not api_key_valid:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid OpenAI API key. Please check your API key in Settings."
+            )
+        
+        # Parse the job URL
+        print("[DEBUG] Starting URL parsing...")
+        job_details = openai_service.parse_job_url(url)
+        print(f"[DEBUG] URL parsing result: {job_details}")
+        
+        if not job_details:
+            raise HTTPException(
+                status_code=400,
+                detail="Unable to extract job details from the provided URL. This might be because the page uses JavaScript to load content dynamically, or the page structure is not recognized. Please try manually entering the job details or use a different URL."
+            )
+        
+        print("[DEBUG] Successfully parsed URL")
+        return job_details
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Exception in parse_job_url: {str(e)}")
+        print(f"[ERROR] Exception type: {type(e)}")
+        import traceback
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while parsing the job URL. Please try again."
+        ) 

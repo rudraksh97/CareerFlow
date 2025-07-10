@@ -21,7 +21,6 @@ class ApplicationBase(BaseModel):
     cover_letter_file_path: Optional[str] = None
     source: ApplicationSource
     notes: Optional[str] = None
-    max_applications: Optional[str] = None
 
 class ApplicationCreate(ApplicationBase):
     pass
@@ -41,7 +40,6 @@ class ApplicationUpdate(BaseModel):
     cover_letter_file_path: Optional[str] = None
     source: Optional[ApplicationSource] = None
     notes: Optional[str] = None
-    max_applications: Optional[str] = None
 
 class Application(ApplicationBase):
     id: str
@@ -57,12 +55,18 @@ class ContactBase(BaseModel):
     email: str
     company: str
     role: Optional[str] = None
-    linkedin_url: Optional[HttpUrl] = None
+    linkedin_url: Optional[str] = None
     contact_type: ContactType
     notes: Optional[str] = None
 
-class ContactCreate(ContactBase):
-    pass
+class ContactCreate(BaseModel):
+    name: str
+    email: str
+    company: str
+    role: Optional[str] = None
+    linkedin_url: Optional[HttpUrl] = None
+    contact_type: ContactType
+    notes: Optional[str] = None
 
 class ContactUpdate(BaseModel):
     name: Optional[str] = None

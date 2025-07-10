@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Plus, Search, Filter, ExternalLink, Calendar, Building, Download } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, Search, Filter, ExternalLink, Calendar, Building, Download, Edit, Trash2 } from 'lucide-react'
 import { api } from '@/services/api'
 import ApplicationForm from '@/components/ApplicationForm'
 
@@ -9,6 +9,8 @@ export default function Applications() {
   const [statusFilter, setStatusFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingApplication, setEditingApplication] = useState(null)
+  const queryClient = useQueryClient()
 
   // Create a stable query key that doesn't change on every filter update
   const queryKey = useMemo(() => ['applications'], [])
@@ -17,6 +19,19 @@ export default function Applications() {
     queryKey,
     queryFn: () => api.get('/applications/').then(res => res.data),
     staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  const deleteApplicationMutation = useMutation({
+    mutationFn: (applicationId: string) => api.delete(`/applications/${applicationId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+    },
+    onError: (error: any) => {
+      console.error('Error deleting application:', error)
+      alert('Failed to delete application. Please try again.')
+    }
   })
 
   // Filter applications client-side to prevent API calls on every filter change
@@ -78,7 +93,24 @@ export default function Applications() {
   }, [])
 
   const handleAddApplication = useCallback(() => {
+    setEditingApplication(null)
     setIsFormOpen(true)
+  }, [])
+
+  const handleEditApplication = useCallback((application: any) => {
+    setEditingApplication(application)
+    setIsFormOpen(true)
+  }, [])
+
+  const handleDeleteApplication = useCallback((applicationId: string) => {
+    if (window.confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
+      deleteApplicationMutation.mutate(applicationId)
+    }
+  }, [deleteApplicationMutation])
+
+  const handleCloseForm = useCallback(() => {
+    setIsFormOpen(false)
+    setEditingApplication(null)
   }, [])
 
   if (isLoading) {
@@ -237,11 +269,19 @@ export default function Applications() {
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         )}
-                        <button className="p-2 text-neutral-400 hover:text-neutral-600 transition-colors">
-                          Edit
+                        <button 
+                          onClick={() => handleEditApplication(application)}
+                          className="p-2 text-neutral-400 hover:text-blue-600 transition-colors"
+                          title="Edit Application"
+                        >
+                          <Edit className="h-4 w-4" />
                         </button>
-                        <button className="p-2 text-neutral-400 hover:text-red-600 transition-colors">
-                          Delete
+                        <button 
+                          onClick={() => handleDeleteApplication(application.id)}
+                          className="p-2 text-neutral-400 hover:text-red-600 transition-colors"
+                          title="Delete Application"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
@@ -280,7 +320,8 @@ export default function Applications() {
       {/* Application Form Modal */}
       <ApplicationForm 
         isOpen={isFormOpen} 
-        onClose={() => setIsFormOpen(false)} 
+        onClose={handleCloseForm}
+        editingApplication={editingApplication}
       />
     </div>
   )

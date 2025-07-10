@@ -26,7 +26,7 @@ def create_contact(
         email=contact.email,
         company=contact.company,
         role=contact.role,
-        linkedin_url=str(contact.linkedin_url),  # Convert URL to string
+        linkedin_url=str(contact.linkedin_url) if contact.linkedin_url else None,
         contact_type=contact.contact_type,
         notes=contact.notes
     )
@@ -82,7 +82,10 @@ def update_contact(
     
     update_data = contact_update.dict(exclude_unset=True)
     for field, value in update_data.items():
-        setattr(db_contact, field, value)
+        if field == "linkedin_url" and value is not None:
+            setattr(db_contact, field, str(value))
+        else:
+            setattr(db_contact, field, value)
     
     db_contact.updated_at = datetime.utcnow()
     db.commit()

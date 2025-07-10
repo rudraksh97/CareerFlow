@@ -6,4 +6,7 @@ python-dotenv
 python-multipart
 passlib
 bcrypt
-alembic 
+alembic
+openai
+requests
+beautifulsoup4 

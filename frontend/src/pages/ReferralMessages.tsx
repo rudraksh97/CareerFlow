@@ -45,7 +45,7 @@ const ReferralMessages = () => {
 
   // Delete mutation
   const deleteMessageMutation = useMutation({
-    mutationFn: (messageId: string) => api.delete(`/referral-messages/${messageId}/`),
+    mutationFn: (messageId: string) => api.delete(`/referral-messages/${messageId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['referral-messages'] });
     },
