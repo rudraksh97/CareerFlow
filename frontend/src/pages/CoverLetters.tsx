@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { FileText, Download, Building, Briefcase, Mail, Upload, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import TemplateFileManager from '@/components/TemplateFileManager';
 import { api } from '@/services/api';
@@ -70,15 +71,18 @@ export default function CoverLetters() {
           <div className='flex items-center justify-between mb-4'>
             <h3 className='text-lg font-semibold text-neutral-900'>Cover Letter Management</h3>
             <div className='flex items-center gap-3'>
-              <motion.a
-                href='/applications'
-                className='btn-secondary text-sm'
+              <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <Plus className='h-4 w-4 mr-2' />
-                Add Application
-              </motion.a>
+                <Link
+                  to='/applications'
+                  className='btn-secondary text-sm inline-flex items-center'
+                >
+                  <Plus className='h-4 w-4 mr-2' />
+                  Add Application
+                </Link>
+              </motion.div>
             </div>
           </div>
 

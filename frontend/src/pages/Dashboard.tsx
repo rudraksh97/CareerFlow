@@ -12,6 +12,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { api } from '../services/api';
 
@@ -240,20 +241,22 @@ export default function Dashboard() {
               animate='show'
             >
               {quickActions.map(action => (
-                <motion.a
+                <motion.div
                   key={action.name}
-                  href={action.href}
                   variants={{
                     hidden: { opacity: 0, y: 20 },
                     show: { opacity: 1, y: 0 },
                   }}
-                  className='action-card'
                   whileHover={{
                     scale: 1.02,
                     transition: { type: 'spring', stiffness: 400, damping: 25 },
                   }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  <Link
+                    to={action.href}
+                    className='action-card block'
+                  >
                   <div className='flex items-center gap-4'>
                     <motion.div
                       className={`p-3 rounded-lg bg-neutral-100 ${action.color}`}
@@ -275,7 +278,8 @@ export default function Dashboard() {
                       <ArrowRight className='h-4 w-4 text-neutral-400' />
                     </motion.div>
                   </div>
-                </motion.a>
+                  </Link>
+                </motion.div>
               ))}
             </motion.div>
           </motion.div>
@@ -373,43 +377,46 @@ export default function Dashboard() {
           animate='show'
         >
           {statCards.map((card, index) => (
-            <motion.a
+            <motion.div
               key={card.title}
-              href={card.href}
               variants={{
                 hidden: { opacity: 0, y: 20 },
                 show: { opacity: 1, y: 0 },
               }}
-              className='card-interactive'
               whileHover={{
                 y: -4,
                 transition: { type: 'spring', stiffness: 400, damping: 25 },
               }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className='p-6'>
-                <div className='flex items-center gap-3 mb-4'>
+              <Link
+                to={card.href}
+                className='card-interactive block'
+              >
+                <div className='p-6'>
+                  <div className='flex items-center gap-3 mb-4'>
+                    <motion.div
+                      className={`p-2 rounded-lg ${card.bgColor}`}
+                      whileHover={{
+                        scale: 1.1,
+                        transition: { type: 'spring', stiffness: 400, damping: 25 },
+                      }}
+                    >
+                      <card.icon className={`h-5 w-5 ${card.color}`} />
+                    </motion.div>
+                  </div>
                   <motion.div
-                    className={`p-2 rounded-lg ${card.bgColor}`}
-                    whileHover={{
-                      scale: 1.1,
-                      transition: { type: 'spring', stiffness: 400, damping: 25 },
-                    }}
+                    className='text-3xl font-bold text-neutral-900 mb-2'
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 + index * 0.1 }}
                   >
-                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                    {card.value}
                   </motion.div>
+                  <div className='text-sm text-neutral-600 font-medium'>{card.title}</div>
                 </div>
-                <motion.div
-                  className='text-3xl font-bold text-neutral-900 mb-2'
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                >
-                  {card.value}
-                </motion.div>
-                <div className='text-sm text-neutral-600 font-medium'>{card.title}</div>
-              </div>
-            </motion.a>
+              </Link>
+            </motion.div>
           ))}
         </motion.div>
 
@@ -448,14 +455,12 @@ export default function Dashboard() {
             animate='show'
           >
             {quickActions.map(action => (
-              <motion.a
+              <motion.div
                 key={action.name}
-                href={action.href}
                 variants={{
                   hidden: { opacity: 0, x: -20 },
                   show: { opacity: 1, x: 0 },
                 }}
-                className='action-card'
                 whileHover={{
                   scale: 1.02,
                   x: 4,
@@ -463,28 +468,33 @@ export default function Dashboard() {
                 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className='flex items-center gap-4'>
-                  <motion.div
-                    className={`p-3 rounded-lg bg-neutral-100 ${action.color}`}
-                    whileHover={{
-                      scale: 1.1,
-                      transition: { type: 'spring', stiffness: 400, damping: 25 },
-                    }}
-                  >
-                    <action.icon className='h-4 w-4' />
-                  </motion.div>
-                  <div className='flex-1'>
-                    <div className='font-semibold text-neutral-900 text-sm'>{action.name}</div>
-                    <div className='text-xs text-neutral-600'>{action.description}</div>
+                <Link
+                  to={action.href}
+                  className='action-card block'
+                >
+                  <div className='flex items-center gap-4'>
+                    <motion.div
+                      className={`p-3 rounded-lg bg-neutral-100 ${action.color}`}
+                      whileHover={{
+                        scale: 1.1,
+                        transition: { type: 'spring', stiffness: 400, damping: 25 },
+                      }}
+                    >
+                      <action.icon className='h-4 w-4' />
+                    </motion.div>
+                    <div className='flex-1'>
+                      <div className='font-semibold text-neutral-900 text-sm'>{action.name}</div>
+                      <div className='text-xs text-neutral-600'>{action.description}</div>
+                    </div>
+                    <motion.div
+                      whileHover={{ x: 3 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    >
+                      <ArrowRight className='h-4 w-4 text-neutral-400' />
+                    </motion.div>
                   </div>
-                  <motion.div
-                    whileHover={{ x: 3 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  >
-                    <ArrowRight className='h-4 w-4 text-neutral-400' />
-                  </motion.div>
-                </div>
-              </motion.a>
+                </Link>
+              </motion.div>
             ))}
           </motion.div>
         </motion.div>
