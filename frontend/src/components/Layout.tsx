@@ -1,5 +1,5 @@
-import React, { memo, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { memo, useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -9,6 +9,8 @@ import {
   Settings,
   BarChart3,
   MessageSquare,
+  Menu,
+  X,
 } from 'lucide-react';
 
 import VersionDisplay from './VersionDisplay';
@@ -29,7 +31,7 @@ const navigation = [
 ];
 
 // Memoized Logo Component
-const CareerFlowLogo = memo(() => (
+const CareerFlowLogo = memo(({ isCollapsed }: { isCollapsed?: boolean }) => (
   <motion.div
     className='flex items-center gap-3'
     whileHover={{ scale: 1.02 }}
@@ -63,24 +65,30 @@ const CareerFlowLogo = memo(() => (
       </motion.div>
     </div>
 
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.1 }}
-    >
-      <h1 className='text-lg font-semibold text-neutral-900'>CareerFlow</h1>
-      <p className='text-xs text-neutral-500'>AI Career Intelligence</p>
-    </motion.div>
+    <AnimatePresence mode='wait'>
+      {!isCollapsed && (
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          <h1 className='text-lg font-semibold text-neutral-900'>CareerFlow</h1>
+          <p className='text-xs text-neutral-500'>AI Career Intelligence</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
   </motion.div>
 ));
 
 CareerFlowLogo.displayName = 'CareerFlowLogo';
 
 // Memoized Navigation Item Component
-const NavigationItem = memo(({ item, index, isActive }: {
+const NavigationItem = memo(({ item, index, isActive, isCollapsed }: {
   item: typeof navigation[0];
   index: number;
   isActive: boolean;
+  isCollapsed: boolean;
 }) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
@@ -91,12 +99,14 @@ const NavigationItem = memo(({ item, index, isActive }: {
       to={item.href}
       className={`
         group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+        ${isCollapsed ? 'justify-center' : ''}
         ${
           isActive
             ? 'bg-neutral-100 text-neutral-900'
             : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
         }
       `}
+      title={isCollapsed ? item.name : undefined}
     >
       <div
         className={`
@@ -110,8 +120,20 @@ const NavigationItem = memo(({ item, index, isActive }: {
       >
         <item.icon className='h-4 w-4' />
       </div>
-      <span className='flex-1'>{item.name}</span>
-      {isActive && (
+      <AnimatePresence mode='wait'>
+        {!isCollapsed && (
+          <motion.span
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            className='flex-1'
+          >
+            {item.name}
+          </motion.span>
+        )}
+      </AnimatePresence>
+      {isActive && !isCollapsed && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -127,7 +149,7 @@ const NavigationItem = memo(({ item, index, isActive }: {
 NavigationItem.displayName = 'NavigationItem';
 
 // Memoized Navigation Component
-const Navigation = memo(({ currentPath }: { currentPath: string }) => {
+const Navigation = memo(({ currentPath, isCollapsed }: { currentPath: string; isCollapsed: boolean }) => {
   return (
     <nav className='flex-1 p-4 space-y-1 overflow-y-auto'>
       {navigation.map((item, index) => {
@@ -138,6 +160,7 @@ const Navigation = memo(({ currentPath }: { currentPath: string }) => {
             item={item}
             index={index}
             isActive={isActive}
+            isCollapsed={isCollapsed}
           />
         );
       })}
@@ -148,36 +171,43 @@ const Navigation = memo(({ currentPath }: { currentPath: string }) => {
 Navigation.displayName = 'Navigation';
 
 // Memoized Sidebar Component
-const Sidebar = memo(({ currentPath }: { currentPath: string }) => (
-  <motion.div
-    className='flex h-screen flex-col bg-white border-r border-neutral-200 fixed inset-y-0 left-0 w-72 z-10'
-    initial={{ x: -288 }}
-    animate={{ x: 0 }}
-    transition={{ type: 'spring', stiffness: 100, damping: 20 }}
-  >
-    {/* Header */}
-    <motion.div
-      className='p-6 border-b border-neutral-200'
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-    >
-      <CareerFlowLogo />
-    </motion.div>
+const Sidebar = memo(({ currentPath, isOpen, isCollapsed }: { currentPath: string; isOpen: boolean; isCollapsed: boolean }) => (
+  <AnimatePresence mode='wait'>
+    {isOpen && (
+      <motion.div
+        className={`flex h-screen flex-col bg-white border-r border-neutral-200 fixed inset-y-0 left-0 z-10 ${
+          isCollapsed ? 'w-20' : 'w-72'
+        }`}
+        initial={{ x: isCollapsed ? -80 : -288 }}
+        animate={{ x: 0 }}
+        exit={{ x: isCollapsed ? -80 : -288 }}
+        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      >
+        {/* Header */}
+        <motion.div
+          className={`p-6 border-b border-neutral-200 ${isCollapsed ? 'px-4' : ''}`}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <CareerFlowLogo isCollapsed={isCollapsed} />
+        </motion.div>
 
-    {/* Navigation */}
-    <Navigation currentPath={currentPath} />
+        {/* Navigation */}
+        <Navigation currentPath={currentPath} isCollapsed={isCollapsed} />
 
-    {/* Footer */}
-    <motion.div
-      className='p-4 border-t border-neutral-200'
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6 }}
-    >
-      <VersionDisplay />
-    </motion.div>
-  </motion.div>
+        {/* Footer */}
+        <motion.div
+          className={`p-4 border-t border-neutral-200 ${isCollapsed ? 'px-2' : ''}`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          {!isCollapsed && <VersionDisplay />}
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
 ));
 
 Sidebar.displayName = 'Sidebar';
@@ -185,24 +215,113 @@ Sidebar.displayName = 'Sidebar';
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   
+  // Sidebar state management
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Load sidebar preferences from localStorage
+  useEffect(() => {
+    const savedSidebarOpen = localStorage.getItem('sidebarOpen');
+    const savedSidebarCollapsed = localStorage.getItem('sidebarCollapsed');
+    
+    if (savedSidebarOpen !== null) {
+      setSidebarOpen(JSON.parse(savedSidebarOpen));
+    }
+    if (savedSidebarCollapsed !== null) {
+      setSidebarCollapsed(JSON.parse(savedSidebarCollapsed));
+    }
+  }, []);
+
+  // Save sidebar preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(sidebarCollapsed));
+  }, [sidebarCollapsed]);
+  
   // Memoize the current path to prevent unnecessary re-renders
   const currentPath = useMemo(() => location.pathname, [location.pathname]);
+
+  // Calculate main content margin based on sidebar state
+  const mainContentMargin = sidebarOpen ? (sidebarCollapsed ? '80px' : '288px') : '0px';
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const toggleSidebarCollapse = () => {
+    if (!sidebarOpen) {
+      setSidebarOpen(true);
+    }
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
 
   return (
     <div className='min-h-screen flex bg-neutral-50'>
       {/* Memoized sidebar */}
-      <Sidebar currentPath={currentPath} />
+      <Sidebar 
+        currentPath={currentPath} 
+        isOpen={sidebarOpen} 
+        isCollapsed={sidebarCollapsed}
+      />
 
       {/* Main content */}
-      <div className='flex-1 flex flex-col min-h-screen' style={{ marginLeft: '288px' }}>
-        {/* Clean top bar */}
+      <motion.div 
+        className='flex-1 flex flex-col min-h-screen transition-all duration-300'
+        style={{ marginLeft: mainContentMargin }}
+        animate={{ marginLeft: mainContentMargin }}
+        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      >
+        {/* Clean top bar with toggle buttons */}
         <motion.div
-          className='bg-white border-b border-neutral-200 px-6 py-4'
+          className='bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between'
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          {/* Breadcrumb or page title could go here */}
+          <div className='flex items-center gap-3'>
+            {/* Sidebar toggle button */}
+            <motion.button
+              onClick={toggleSidebar}
+              className='p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors'
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            >
+              {sidebarOpen ? <X className='h-5 w-5' /> : <Menu className='h-5 w-5' />}
+            </motion.button>
+
+            {/* Collapse toggle button (only when sidebar is open) */}
+            {sidebarOpen && (
+              <motion.button
+                onClick={toggleSidebarCollapse}
+                className='p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors'
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+              >
+                <motion.div
+                  animate={{ rotate: sidebarCollapsed ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <svg width='20' height='20' viewBox='0 0 24 24' fill='none' className='text-current'>
+                    <path
+                      d='M15 18L9 12L15 6'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                  </svg>
+                </motion.div>
+              </motion.button>
+            )}
+          </div>
         </motion.div>
 
         {/* Page content */}
@@ -216,7 +335,7 @@ export default function Layout({ children }: LayoutProps) {
             {children}
           </motion.div>
         </main>
-      </div>
+      </motion.div>
     </div>
   );
 }
