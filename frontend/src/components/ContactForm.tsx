@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Mail, Phone, Link } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Mail, Link, Users, Building2, User } from 'lucide-react'
 import { api } from '@/services/api'
 
 interface ContactFormProps {
@@ -152,167 +153,212 @@ export default function ContactForm({ isOpen, onClose, contact }: ContactFormPro
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        {/* Background overlay */}
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={handleClose} />
-
-        {/* Modal */}
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">
-                {isEditing ? 'Edit Contact' : 'Add New Contact'}
-              </h3>
+    <AnimatePresence>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleClose}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        >
+          <div className="p-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-blue-100 border border-blue-200">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-neutral-900">
+                    {isEditing ? 'Edit Contact' : 'Add New Contact'}
+                  </h2>
+                  <p className="text-neutral-600 text-sm">
+                    {isEditing ? 'Update contact information' : 'Add a new professional contact'}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-all duration-200 focus-ring"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`input-field ${errors.name ? 'border-red-500' : ''}`}
-                    placeholder="Full name"
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
-                  )}
+              {/* Contact Information Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <User className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-neutral-900">Personal Information</h3>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="form-label">
+                      Name *
+                    </label>
                     <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`}
-                      placeholder="email@example.com"
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      className={`form-input ${errors.name ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                      placeholder="Full name"
+                    />
+                    {errors.name && (
+                      <p className="text-red-600 text-sm mt-2">{errors.name}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="form-label">
+                      Email *
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400 pointer-events-none" />
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className={`form-input pl-10 ${errors.email ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                        placeholder="email@example.com"
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-red-600 text-sm mt-2">{errors.email}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Professional Information Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Building2 className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-neutral-900">Professional Information</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="form-label">
+                      Company *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) => handleInputChange('company', e.target.value)}
+                      className={`form-input ${errors.company ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                      placeholder="Company name"
+                    />
+                    {errors.company && (
+                      <p className="text-red-600 text-sm mt-2">{errors.company}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="form-label">
+                      Role
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.role}
+                      onChange={(e) => handleInputChange('role', e.target.value)}
+                      className="form-input"
+                      placeholder="e.g., Senior Engineer, Recruiter"
                     />
                   </div>
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                </div>
+
+                <div>
+                  <label className="form-label">
+                    Contact Type *
+                  </label>
+                  <select
+                    value={formData.contact_type}
+                    onChange={(e) => handleInputChange('contact_type', e.target.value)}
+                    className="form-input"
+                  >
+                    <option value="referral">Referral</option>
+                    <option value="recruiter">Recruiter</option>
+                    <option value="hiring_manager">Hiring Manager</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Additional Information Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Link className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-neutral-900">Additional Information</h3>
+                </div>
+                
+                <div>
+                  <label className="form-label">
+                    LinkedIn URL
+                  </label>
+                  <div className="relative">
+                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 pointer-events-none" />
+                    <input
+                      type="url"
+                      value={formData.linkedin_url}
+                      onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
+                      className={`form-input pl-10 ${errors.linkedin_url ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </div>
+                  {errors.linkedin_url && (
+                    <p className="text-red-600 text-sm mt-2">{errors.linkedin_url}</p>
                   )}
                 </div>
-              </div>
 
-              {/* Company Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Company *
+                  <label className="form-label">
+                    Notes
                   </label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => handleInputChange('company', e.target.value)}
-                    className={`input-field ${errors.company ? 'border-red-500' : ''}`}
-                    placeholder="Company name"
-                  />
-                  {errors.company && (
-                    <p className="mt-1 text-sm text-red-600">{errors.company}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Role
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.role}
-                    onChange={(e) => handleInputChange('role', e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Senior Engineer, Recruiter"
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    rows={3}
+                    className="form-input resize-none"
+                    placeholder="Additional notes about this contact..."
                   />
                 </div>
               </div>
 
-              {/* LinkedIn URL */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  LinkedIn URL
-                </label>
-                <Link className="absolute left-3 top-9 h-4 w-4 text-blue-500 pointer-events-none" />
-                <input
-                  type="url"
-                  value={formData.linkedin_url}
-                  onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
-                  className={`input-field pl-10 ${errors.linkedin_url ? 'border-red-500' : ''}`}
-                  placeholder="https://linkedin.com/in/username"
-                  style={{ marginTop: 0 }}
-                />
-                {errors.linkedin_url && (
-                  <p className="mt-1 text-sm text-red-600">{errors.linkedin_url}</p>
-                )}
-              </div>
-
-              {/* Contact Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Type *
-                </label>
-                <select
-                  value={formData.contact_type}
-                  onChange={(e) => handleInputChange('contact_type', e.target.value)}
-                  className="input-field"
-                >
-                  <option value="referral">Referral</option>
-                  <option value="recruiter">Recruiter</option>
-                  <option value="hiring_manager">Hiring Manager</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange('notes', e.target.value)}
-                  rows={3}
-                  className="input-field resize-none"
-                  placeholder="Additional notes about this contact..."
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row justify-end gap-2 mt-8">
+              {/* Form Actions */}
+              <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-neutral-200">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="btn btn-secondary w-full sm:w-auto"
+                  className="btn-secondary focus-ring"
                   disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary w-full sm:w-auto"
+                  className="btn-primary focus-ring relative min-w-[120px] disabled:opacity-75 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Adding...' : 'Add Contact'}
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center">
+                      <div className="loading-accent mr-2" />
+                      <span>{isEditing ? 'Updating...' : 'Adding...'}</span>
+                    </div>
+                  ) : (
+                    <span>
+                      {isEditing ? 'Update Contact' : 'Add Contact'}
+                    </span>
+                  )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </AnimatePresence>
   )
 } 

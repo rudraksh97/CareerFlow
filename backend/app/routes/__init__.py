@@ -6,6 +6,7 @@ from . import profile
 from . import resumes
 from . import cover_letters
 from . import referral_messages
+from . import template_files
 
 __all__ = [
     "applications_router",

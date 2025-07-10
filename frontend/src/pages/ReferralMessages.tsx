@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Plus, 
   Search, 
-  Filter, 
+ 
   Edit, 
   Trash2, 
   Copy, 
@@ -11,16 +11,13 @@ import {
   MessageSquare,
   Users,
   Mail,
-  Eye,
   EyeOff
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { api } from '@/services/api';
 import { 
   ReferralMessage, 
-  ReferralMessageType, 
-  GenerateReferralMessageRequest,
-  GeneratedReferralMessage
+  ReferralMessageType
 } from '@/types';
 import ReferralMessageForm from '@/components/ReferralMessageForm';
 import MessageGenerator from '@/components/MessageGenerator';
@@ -32,7 +29,7 @@ const ReferralMessages = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMessage, setEditingMessage] = useState<ReferralMessage | null>(null);
   const [generatingMessage, setGeneratingMessage] = useState<ReferralMessage | null>(null);
-  const [generatedResult, setGeneratedResult] = useState<GeneratedReferralMessage | null>(null);
+
   
   const queryClient = useQueryClient();
 
@@ -67,19 +64,7 @@ const ReferralMessages = () => {
     }
   });
 
-  // Generate message mutation
-  const generateMessageMutation = useMutation({
-    mutationFn: (request: GenerateReferralMessageRequest) => 
-      api.post('/referral-messages/generate', request).then(res => res.data),
-    onSuccess: (data: GeneratedReferralMessage) => {
-      setGeneratedResult(data);
-      queryClient.invalidateQueries({ queryKey: ['referral-messages'] });
-    },
-    onError: (error: any) => {
-      console.error('Error generating message:', error);
-      alert('Failed to generate message. Please try again.');
-    }
-  });
+
 
   // Filter messages
   const filteredMessages = useMemo(() => {
@@ -130,7 +115,6 @@ const ReferralMessages = () => {
 
   const handleCloseGenerate = useCallback(() => {
     setGeneratingMessage(null);
-    setGeneratedResult(null);
   }, []);
 
   // Format message type for display
@@ -140,13 +124,13 @@ const ReferralMessages = () => {
 
   const getTypeColor = (type: ReferralMessageType) => {
     const colors = {
-      [ReferralMessageType.COLD_OUTREACH]: 'text-blue-600 bg-blue-50 border-blue-200',
-      [ReferralMessageType.WARM_INTRODUCTION]: 'text-green-600 bg-green-50 border-green-200',
-      [ReferralMessageType.FOLLOW_UP]: 'text-orange-600 bg-orange-50 border-orange-200',
-      [ReferralMessageType.THANK_YOU]: 'text-purple-600 bg-purple-50 border-purple-200',
-      [ReferralMessageType.NETWORKING]: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+      [ReferralMessageType.COLD_OUTREACH]: 'text-neutral-700 bg-neutral-100 border-neutral-200',
+      [ReferralMessageType.WARM_INTRODUCTION]: 'text-neutral-700 bg-neutral-100 border-neutral-200',
+      [ReferralMessageType.FOLLOW_UP]: 'text-neutral-700 bg-neutral-100 border-neutral-200',
+      [ReferralMessageType.THANK_YOU]: 'text-neutral-700 bg-neutral-100 border-neutral-200',
+      [ReferralMessageType.NETWORKING]: 'text-blue-700 bg-blue-50 border-blue-200',
     };
-    return colors[type] || 'text-gray-600 bg-gray-50 border-gray-200';
+    return colors[type] || 'text-neutral-700 bg-neutral-100 border-neutral-200';
   };
 
   const containerVariants = {
@@ -161,7 +145,10 @@ const ReferralMessages = () => {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+    },
   };
 
   if (isLoading) {
@@ -181,13 +168,16 @@ const ReferralMessages = () => {
       animate="visible"
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <motion.div 
+        variants={itemVariants} 
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
         <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Referral Messages</h1>
-          <p className="text-neutral-600">Create and manage personalized referral message templates</p>
+          <h1 className="text-3xl font-bold gradient-text">Referral Messages</h1>
+          <p className="text-neutral-600 mt-1">Create and manage personalized referral message templates</p>
         </div>
         <button 
-          className="btn btn-primary"
+          className="btn-primary"
           onClick={handleAddMessage}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -206,7 +196,7 @@ const ReferralMessages = () => {
                 placeholder="Search templates..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10"
+                className="form-input pl-10"
               />
             </div>
           </div>
@@ -214,7 +204,7 @@ const ReferralMessages = () => {
             <select 
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as ReferralMessageType | '')}
-              className="input-field"
+              className="form-input"
             >
               <option value="">All Types</option>
               {Object.values(ReferralMessageType).map(type => (
@@ -226,7 +216,7 @@ const ReferralMessages = () => {
             <select 
               value={activeFilter.toString()}
               onChange={(e) => setActiveFilter(e.target.value === '' ? '' : e.target.value === 'true')}
-              className="input-field"
+              className="form-input"
             >
               <option value="">All Status</option>
               <option value="true">Active</option>
@@ -239,35 +229,42 @@ const ReferralMessages = () => {
       {/* Messages Grid */}
       <motion.div variants={itemVariants}>
         {filteredMessages.length === 0 ? (
-          <div className="card p-12 text-center">
+          <motion.div 
+            className="card p-12 text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+          >
             <MessageSquare className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-neutral-700 mb-2">No referral message templates</h3>
-            <p className="text-neutral-500 mb-6">
+            <p className="text-neutral-500 max-w-md mx-auto">
               {searchTerm || typeFilter || activeFilter !== '' 
-                ? 'No templates match your current filters.' 
-                : 'Create your first referral message template to get started.'}
+                ? 'No templates match your current filters. Try adjusting your search criteria.' 
+                : 'Create your first referral message template to get started with personalized outreach.'}
             </p>
-            {(!searchTerm && !typeFilter && activeFilter === '') && (
-              <button onClick={handleAddMessage} className="btn btn-primary">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Template
-              </button>
-            )}
-          </div>
+          </motion.div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredMessages.map((message) => (
-              <motion.div
-                key={message.id}
-                variants={itemVariants}
-                className={`card p-6 transition-all duration-200 hover:shadow-md ${
-                  !message.is_active ? 'opacity-60' : ''
-                }`}
-              >
+            {filteredMessages.map((message, index) => (
+                              <motion.div
+                  key={message.id}
+                  className={`card-interactive p-6 group ${
+                    !message.is_active ? 'opacity-60' : ''
+                  }`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: index * 0.1,
+                    ease: "easeOut"
+                  }}
+                >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-neutral-900 truncate">{message.title}</h3>
+                      <h3 className="font-semibold text-neutral-900 truncate group-hover:text-blue-600 transition-colors duration-200">
+                        {message.title}
+                      </h3>
                       {!message.is_active && <EyeOff className="h-4 w-4 text-neutral-400" />}
                     </div>
                     <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getTypeColor(message.message_type)}`}>
@@ -278,7 +275,7 @@ const ReferralMessages = () => {
 
                 {/* Message preview */}
                 <div className="mb-4">
-                  <p className="text-sm text-neutral-600 line-clamp-3">
+                  <p className="text-sm text-neutral-600 line-clamp-3 leading-relaxed">
                     {message.message_template.substring(0, 150)}
                     {message.message_template.length > 150 ? '...' : ''}
                   </p>
@@ -286,15 +283,15 @@ const ReferralMessages = () => {
 
                 {/* Target info */}
                 {(message.target_company || message.target_position) && (
-                  <div className="mb-4 text-xs text-neutral-500">
+                  <div className="mb-4 space-y-1">
                     {message.target_company && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2 text-xs text-neutral-500">
                         <Users className="h-3 w-3" />
                         <span>{message.target_company}</span>
                       </div>
                     )}
                     {message.target_position && (
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-2 text-xs text-neutral-500">
                         <Mail className="h-3 w-3" />
                         <span>{message.target_position}</span>
                       </div>
@@ -303,7 +300,8 @@ const ReferralMessages = () => {
                 )}
 
                 {/* Usage count */}
-                <div className="text-xs text-neutral-500 mb-4">
+                <div className="text-xs text-neutral-500 mb-4 flex items-center gap-1">
+                  <Play className="h-3 w-3" />
                   Used {message.usage_count} times
                 </div>
 
@@ -311,7 +309,7 @@ const ReferralMessages = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleGenerateMessage(message)}
-                    className="flex-1 btn btn-primary text-xs py-2"
+                    className="flex-1 btn-accent text-xs py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!message.is_active}
                   >
                     <Play className="h-3 w-3 mr-1" />
@@ -319,19 +317,22 @@ const ReferralMessages = () => {
                   </button>
                   <button
                     onClick={() => handleEditMessage(message)}
-                    className="btn btn-secondary p-2"
+                    className="btn-secondary p-2 focus-ring"
+                    title="Edit template"
                   >
                     <Edit className="h-3 w-3" />
                   </button>
                   <button
                     onClick={() => handleDuplicateMessage(message.id)}
-                    className="btn btn-secondary p-2"
+                    className="btn-secondary p-2 focus-ring"
+                    title="Duplicate template"
                   >
                     <Copy className="h-3 w-3" />
                   </button>
                   <button
                     onClick={() => handleDeleteMessage(message.id)}
-                    className="btn btn-secondary p-2 text-red-600 hover:bg-red-50"
+                    className="btn-secondary p-2 text-red-600 hover:bg-red-50 hover:text-red-700 focus-ring"
+                    title="Delete template"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

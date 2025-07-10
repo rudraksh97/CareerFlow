@@ -11,8 +11,7 @@ router = APIRouter()
 @router.get("/", response_model=List[ApplicationSchema])
 def get_all_resumes(db: Session = Depends(get_db)):
     """
-    Get all applications to display resume information.
-    This will return full application objects.
+    Get all applications that have a resume.
     """
-    applications = db.query(Application).order_by(Application.date_applied.desc()).all()
+    applications = db.query(Application).filter(Application.resume_filename.isnot(None)).order_by(Application.date_applied.desc()).all()
     return applications 

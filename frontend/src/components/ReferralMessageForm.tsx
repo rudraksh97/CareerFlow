@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, Save, Type, MessageSquare, Building, Briefcase, User, ToggleLeft, ToggleRight } from 'lucide-react';
+import { X, Save, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '@/services/api';
 import { 
@@ -119,7 +119,7 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           onClick={(e) => e.stopPropagation()}
-          className="modal-content max-w-4xl max-h-[90vh] overflow-y-auto"
+          className="modal-content max-w-2xl max-h-[90vh] overflow-y-auto"
         >
           <form onSubmit={handleSubmit} className="p-6">
             {/* Header */}
@@ -139,150 +139,58 @@ const ReferralMessageForm = ({ isOpen, onClose, editingMessage }: ReferralMessag
               </button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-4">
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    <Type className="h-4 w-4 inline mr-1" />
-                    Template Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => handleChange('title', e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Cold Outreach - Software Engineer"
-                    required
-                  />
-                </div>
-
-                {/* Message Type */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Message Type *
-                  </label>
-                  <select
-                    value={formData.message_type}
-                    onChange={(e) => handleChange('message_type', e.target.value as ReferralMessageType)}
-                    className="input-field"
-                    required
-                  >
-                    {Object.values(ReferralMessageType).map(type => (
-                      <option key={type} value={type}>
-                        {formatMessageType(type)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Target Company */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    <Building className="h-4 w-4 inline mr-1" />
-                    Target Company (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.target_company}
-                    onChange={(e) => handleChange('target_company', e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Google, Microsoft (leave blank for general use)"
-                  />
-                </div>
-
-                {/* Target Position */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    <Briefcase className="h-4 w-4 inline mr-1" />
-                    Target Position (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.target_position}
-                    onChange={(e) => handleChange('target_position', e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Software Engineer, Product Manager"
-                  />
-                </div>
-
-                {/* Active Status */}
-                <div>
-                  <label className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-neutral-700">Active Template</span>
-                    <button
-                      type="button"
-                      onClick={() => handleChange('is_active', !formData.is_active)}
-                      className={`flex items-center ${formData.is_active ? 'text-green-600' : 'text-neutral-400'}`}
-                    >
-                      {formData.is_active ? <ToggleRight className="h-5 w-5" /> : <ToggleLeft className="h-5 w-5" />}
-                    </button>
-                  </label>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Inactive templates won't appear in generation options
-                  </p>
-                </div>
+            <div className="space-y-6">
+              {/* Title */}
+              <div>
+                <label className="form-label">
+                  Template Title *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => handleChange('title', e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., Cold Outreach - Software Engineer"
+                  required
+                />
               </div>
 
-              {/* Right Column */}
-              <div className="space-y-4">
-                {/* Subject Template */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Email Subject Template (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.subject_template}
-                    onChange={(e) => handleChange('subject_template', e.target.value)}
-                    className="input-field"
-                    placeholder="e.g., Introduction - {your_name} interested in {position_title}"
-                  />
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Use variables like {'{contact_name}'}, {'{company_name}'}, {'{position_title}'}
-                  </p>
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    <User className="h-4 w-4 inline mr-1" />
-                    Usage Notes (Optional)
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => handleChange('notes', e.target.value)}
-                    className="input-field h-24 resize-none"
-                    placeholder="Notes about when and how to use this template..."
-                  />
-                </div>
+              {/* Message Type */}
+              <div>
+                <label className="form-label">
+                  Message Type *
+                </label>
+                <select
+                  value={formData.message_type}
+                  onChange={(e) => handleChange('message_type', e.target.value as ReferralMessageType)}
+                  className="input-field"
+                  required
+                >
+                  {Object.values(ReferralMessageType).map(type => (
+                    <option key={type} value={type}>
+                      {formatMessageType(type)}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
             {/* Message Template */}
             <div className="mt-6">
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
+              <label className="form-label">
                 Message Template *
               </label>
               <textarea
                 value={formData.message_template}
                 onChange={(e) => handleChange('message_template', e.target.value)}
-                className="input-field h-64 resize-none"
+                className="input-field h-48 resize-none"
                 placeholder="Hi {contact_name},
 
-I hope this message finds you well. My name is {your_name}, and I'm interested in...
-
-Available variables:
-- {contact_name} - Recipient's name
-- {company_name} - Target company
-- {position_title} - Job position
-- {your_name} - Your name
-- {your_background} - Your background/experience"
+I hope this message finds you well. My name is {your_name}, and I'm interested in..."
                 required
               />
               <p className="text-xs text-neutral-500 mt-2">
-                Use curly braces for variables: {'{contact_name}'}, {'{company_name}'}, {'{position_title}'}, {'{your_name}'}, {'{your_background}'}
+                Use variables: {'{contact_name}'}, {'{company_name}'}, {'{position_title}'}, {'{your_name}'}
               </p>
             </div>
 

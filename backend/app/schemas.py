@@ -4,6 +4,7 @@ from datetime import datetime
 from .models.application import ApplicationStatus, ApplicationSource
 from .models.contact import ContactType
 from .models.referral_message import ReferralMessageType
+from .models.template_file import TemplateFileType
 
 # Application Schemas
 class ApplicationBase(BaseModel):
@@ -221,4 +222,29 @@ class GeneratedReferralMessage(BaseModel):
     subject: Optional[str] = None
     message: str
     template_title: str
-    variables_used: dict 
+    variables_used: dict
+
+# Template File Schemas
+class TemplateFileBase(BaseModel):
+    name: str
+    file_type: TemplateFileType
+    filename: str
+    file_path: str
+    description: Optional[str] = None
+
+class TemplateFileCreate(BaseModel):
+    name: str
+    file_type: TemplateFileType
+    description: Optional[str] = None
+
+class TemplateFileUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+class TemplateFile(TemplateFileBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True 

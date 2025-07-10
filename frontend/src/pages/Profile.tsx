@@ -17,17 +17,18 @@ const Profile = () => {
     const { data, isLoading } = useQuery({
         queryKey: ['profile'],
         queryFn: () => api.get('/profile/').then(res => res.data),
-        onSuccess: (data) => {
-            if (data) {
-                setProfile({
-                    full_name: data.full_name || '',
-                    email: data.email || '',
-                    headline: data.headline || '',
-                    linkedin_url: data.linkedin_url || '',
-                });
-            }
-        },
     });
+
+    useEffect(() => {
+        if (data) {
+            setProfile({
+                full_name: data.full_name || '',
+                email: data.email || '',
+                headline: data.headline || '',
+                linkedin_url: data.linkedin_url || '',
+            });
+        }
+    }, [data]);
 
     const mutation = useMutation({
         mutationFn: (updatedProfile: typeof profile) => {
@@ -74,7 +75,7 @@ const Profile = () => {
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <User className="h-4 w-4 text-neutral-400" />
                                 </span>
-                                <input type="text" name="full_name" id="full_name" className="input-field pl-10" value={profile.full_name} onChange={handleInputChange} placeholder="e.g., John Doe" />
+                                <input type="text" name="full_name" id="full_name" className="form-input pl-10" value={profile.full_name} onChange={handleInputChange} placeholder="e.g., John Doe" />
                             </div>
                         </div>
                         <div>
@@ -83,7 +84,7 @@ const Profile = () => {
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <Mail className="h-4 w-4 text-neutral-400" />
                                 </span>
-                                <input type="email" name="email" id="email" className="input-field pl-10" value={profile.email} onChange={handleInputChange} placeholder="e.g., john.doe@email.com" />
+                                <input type="email" name="email" id="email" className="form-input pl-10" value={profile.email} onChange={handleInputChange} placeholder="e.g., john.doe@email.com" />
                             </div>
                         </div>
                         <div>
@@ -92,7 +93,7 @@ const Profile = () => {
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <Briefcase className="h-4 w-4 text-neutral-400" />
                                 </span>
-                                <input type="text" name="headline" id="headline" className="input-field pl-10" value={profile.headline} onChange={handleInputChange} placeholder="e.g., Senior Software Engineer" />
+                                <input type="text" name="headline" id="headline" className="form-input pl-10" value={profile.headline} onChange={handleInputChange} placeholder="e.g., Senior Software Engineer" />
                             </div>
                         </div>
                         <div>
@@ -101,12 +102,12 @@ const Profile = () => {
                                 <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                     <Linkedin className="h-4 w-4 text-neutral-400" />
                                 </span>
-                                <input type="url" name="linkedin_url" id="linkedin_url" className="input-field pl-10" value={profile.linkedin_url} onChange={handleInputChange} placeholder="e.g., https://linkedin.com/in/johndoe" />
+                                <input type="url" name="linkedin_url" id="linkedin_url" className="form-input pl-10" value={profile.linkedin_url} onChange={handleInputChange} placeholder="e.g., https://linkedin.com/in/johndoe" />
                             </div>
                         </div>
                     </div>
                     <div className="flex justify-end">
-                        <button type="submit" className="btn btn-primary" disabled={isLoading || mutation.isPending}>
+                        <button type="submit" className="btn-primary" disabled={isLoading || mutation.isPending}>
                             <Save className="h-4 w-4 mr-2" />
                             {mutation.isPending ? 'Saving...' : 'Save Profile'}
                         </button>

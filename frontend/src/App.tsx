@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const Applications = React.lazy(() => import('./pages/Applications'))
@@ -12,8 +11,6 @@ const Settings = React.lazy(() => import('./pages/Settings'))
 const Profile = React.lazy(() => import('./pages/Profile'))
 const Resumes = React.lazy(() => import('./pages/Resumes'))
 const CoverLetters = React.lazy(() => import('./pages/CoverLetters'))
-
-const queryClient = new QueryClient()
 
 const App: React.FC = () => {
   return (
