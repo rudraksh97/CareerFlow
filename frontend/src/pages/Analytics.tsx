@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart3,
   TrendingUp,
@@ -8,7 +8,10 @@ import {
   Activity,
   CheckCircle2,
   AlertTriangle,
+  Download,
+  CheckCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import { api } from '@/services/api';
 
@@ -107,14 +110,10 @@ function MetricCard({
   title,
   value,
   icon: Icon,
-  color,
-  bgColor,
 }: {
   title: string;
   value: string | number;
   icon: React.ElementType;
-  color: string;
-  bgColor: string;
 }) {
   return (
     <motion.div
@@ -128,14 +127,12 @@ function MetricCard({
           <p className='text-sm font-medium text-neutral-600 mb-1 group-hover:text-neutral-700 transition-colors duration-200'>
             {title}
           </p>
-          <p className='text-2xl font-bold text-neutral-900 group-hover:text-blue-600 transition-colors duration-200'>
+          <p className='text-2xl font-bold text-neutral-900 group-hover:text-neutral-700 transition-colors duration-200'>
             {value}
           </p>
         </div>
-        <div
-          className={`p-3 rounded-xl ${bgColor} border transition-all duration-200 group-hover:scale-105`}
-        >
-          <Icon className={`h-6 w-6 ${color}`} />
+        <div className='p-3 rounded-xl bg-neutral-100 border border-neutral-200 transition-all duration-200 group-hover:scale-105'>
+          <Icon className='h-6 w-6 text-neutral-600' />
         </div>
       </div>
     </motion.div>
@@ -143,6 +140,10 @@ function MetricCard({
 }
 
 export default function Analytics() {
+  const [showSuccessMessage, setShowSuccessMessage] = useState('');
+  const [exportFormat, setExportFormat] = useState<'csv' | 'json'>('json');
+  const [showExportModal, setShowExportModal] = useState(false);
+
   const {
     data: dashboardData,
     isLoading: dashboardLoading,
@@ -168,6 +169,146 @@ export default function Analytics() {
     retry: 2,
     refetchOnWindowFocus: false,
   });
+
+  const handleExport = () => {
+    if (!dashboardData || !sourceData) return;
+
+    const analyticsData = {
+      dashboard_overview: {
+        total_applications: dashboardData.total_applications,
+        applications_by_status: dashboardData.applications_by_status,
+        applications_by_source: dashboardData.applications_by_source,
+        success_rate: dashboardData.success_rate,
+        recent_applications: dashboardData.recent_applications,
+        total_contacts: dashboardData.total_contacts,
+        contacts_by_type: dashboardData.contacts_by_type,
+        recent_interactions: dashboardData.recent_interactions,
+      },
+      source_effectiveness: sourceData.source_effectiveness,
+      exported_at: new Date().toISOString(),
+    };
+
+    if (exportFormat === 'json') {
+      exportAsJSON(analyticsData);
+    } else {
+      exportAsCSV(analyticsData);
+    }
+
+    setShowExportModal(false);
+    setShowSuccessMessage('Analytics data exported successfully!');
+    setTimeout(() => setShowSuccessMessage(''), 3000);
+  };
+
+  const exportAsJSON = (data: any) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pats-analytics-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportAsCSV = (data: any) => {
+    const csvContent = [];
+    
+    // Dashboard overview section
+    csvContent.push('Dashboard Overview');
+    csvContent.push('Metric,Value');
+    csvContent.push(`Total Applications,${data.dashboard_overview.total_applications}`);
+    csvContent.push(`Success Rate,${data.dashboard_overview.success_rate}%`);
+    csvContent.push(`Recent Applications,${data.dashboard_overview.recent_applications}`);
+    csvContent.push(`Total Contacts,${data.dashboard_overview.total_contacts}`);
+    csvContent.push('');
+    
+    // Status breakdown
+    csvContent.push('Applications by Status');
+    csvContent.push('Status,Count');
+    Object.entries(data.dashboard_overview.applications_by_status).forEach(([status, count]) => {
+      csvContent.push(`${status},${count}`);
+    });
+    csvContent.push('');
+    
+    // Source effectiveness
+    csvContent.push('Source Effectiveness');
+    csvContent.push('Source,Total Applications,Success Rate');
+    data.source_effectiveness.forEach((source: any) => {
+      csvContent.push(`${source.source},${source.total_applications},${source.success_rate}%`);
+    });
+
+    const blob = new Blob([csvContent.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pats-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const ExportModal = () => (
+    <AnimatePresence>
+      {showExportModal && (
+        <motion.div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowExportModal(false)}
+        >
+          <motion.div
+            className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-neutral-200"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-neutral-900 mb-4">Export Analytics Data</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Format</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['json', 'csv'] as const).map((format) => (
+                    <button
+                      key={format}
+                      onClick={() => setExportFormat(format)}
+                      className={`px-3 py-2 text-sm rounded-lg transition-colors ${
+                        exportFormat === format
+                          ? 'bg-neutral-900 text-white'
+                          : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      {format.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 px-4 py-2 text-neutral-600 hover:text-neutral-800 font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExport}
+                className="flex-1 btn-primary"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
   if (dashboardLoading || sourceLoading) {
     return <AnalyticsSkeleton />;
@@ -199,29 +340,21 @@ export default function Analytics() {
       name: 'Total Applications',
       value: dashboardData?.total_applications || 0,
       icon: Building,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50 border-blue-200',
     },
     {
       name: 'Interviews',
       value: dashboardData?.applications_by_status?.interview || 0,
       icon: Users,
-      color: 'text-neutral-600',
-      bgColor: 'bg-neutral-100 border-neutral-200',
     },
     {
       name: 'Offers',
       value: dashboardData?.applications_by_status?.offer || 0,
       icon: TrendingUp,
-      color: 'text-neutral-600',
-      bgColor: 'bg-neutral-100 border-neutral-200',
     },
     {
       name: 'Success Rate',
       value: `${dashboardData?.success_rate || 0}%`,
       icon: CheckCircle2,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50 border-blue-200',
     },
   ];
 
@@ -247,9 +380,49 @@ export default function Analytics() {
       initial='hidden'
       animate='visible'
     >
-      <motion.div variants={itemVariants} className='flex flex-col gap-2'>
-        <h1 className='text-3xl font-bold gradient-text'>Analytics</h1>
-        <p className='text-neutral-600'>Track your application performance and insights</p>
+      {/* Success Message */}
+      <AnimatePresence>
+        {showSuccessMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2"
+          >
+            <CheckCircle className="h-5 w-5" />
+            {showSuccessMessage}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <motion.div variants={itemVariants} className='relative'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <div>
+            <div className='flex items-center gap-4 mb-2'>
+              <h1 className='text-2xl font-bold text-neutral-900'>Analytics</h1>
+              <div className='inline-flex items-center gap-2 px-3 py-1 bg-neutral-100 rounded-full border border-neutral-200'>
+                <BarChart3 className='h-4 w-4 text-neutral-600' />
+                <span className='text-sm font-medium text-neutral-700'>Insights</span>
+              </div>
+            </div>
+            <p className='text-sm text-neutral-600'>
+              Track your application performance and insights
+            </p>
+          </div>
+          
+          {hasData && (
+            <div className='flex items-center gap-3'>
+              <button
+                onClick={() => setShowExportModal(true)}
+                className='btn-secondary'
+              >
+                <Download className='h-4 w-4 mr-2' />
+                Export
+              </button>
+            </div>
+          )}
+        </div>
       </motion.div>
 
       {!hasData ? (
@@ -287,8 +460,6 @@ export default function Analytics() {
                   title={metric.name}
                   value={metric.value}
                   icon={metric.icon}
-                  color={metric.color}
-                  bgColor={metric.bgColor}
                 />
               </motion.div>
             ))}
@@ -303,7 +474,7 @@ export default function Analytics() {
               transition={{ duration: 0.6 }}
             >
               <h2 className='text-xl font-semibold text-neutral-900 mb-6 flex items-center gap-2'>
-                <Activity className='h-5 w-5 text-blue-600' />
+                <Activity className='h-5 w-5 text-neutral-600' />
                 Source Effectiveness
               </h2>
               <div className='space-y-4'>
@@ -329,7 +500,7 @@ export default function Analytics() {
                         </p>
                       </div>
                       <div className='text-right'>
-                        <p className='text-lg font-bold text-blue-600'>{source.success_rate}%</p>
+                        <p className='text-lg font-bold text-neutral-900'>{source.success_rate}%</p>
                         <p className='text-sm text-neutral-500'>success rate</p>
                       </div>
                     </motion.div>
@@ -347,7 +518,7 @@ export default function Analytics() {
                 transition={{ duration: 0.6 }}
               >
                 <h2 className='text-xl font-semibold text-neutral-900 mb-6 flex items-center gap-2'>
-                  <BarChart3 className='h-5 w-5 text-blue-600' />
+                  <BarChart3 className='h-5 w-5 text-neutral-600' />
                   Status Distribution
                 </h2>
                 <div className='space-y-4'>
@@ -373,6 +544,8 @@ export default function Analytics() {
           </motion.div>
         </>
       )}
+
+      <ExportModal />
     </motion.div>
   );
 }

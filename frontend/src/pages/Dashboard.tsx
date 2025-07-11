@@ -46,28 +46,24 @@ const quickActions = [
     description: 'Track your next opportunity',
     href: '/applications',
     icon: Plus,
-    color: 'text-blue-600',
   },
   {
     name: 'Add Contact',
     description: 'Expand your network',
     href: '/contacts',
     icon: User,
-    color: 'text-green-600',
   },
   {
     name: 'View Analytics',
     description: 'Discover insights',
     href: '/analytics',
     icon: BarChart3,
-    color: 'text-purple-600',
   },
   {
     name: 'Upload Resume',
     description: 'Perfect your story',
     href: '/resumes',
     icon: FileText,
-    color: 'text-orange-600',
   },
 ];
 
@@ -259,7 +255,7 @@ export default function Dashboard() {
                   >
                   <div className='flex items-center gap-4'>
                     <motion.div
-                      className={`p-3 rounded-lg bg-neutral-100 ${action.color}`}
+                      className='p-3 rounded-lg bg-neutral-100 text-neutral-600'
                       whileHover={{
                         scale: 1.1,
                         transition: { type: 'spring', stiffness: 400, damping: 25 },
@@ -295,32 +291,24 @@ export default function Dashboard() {
       value: stats.totalApplications,
       icon: Briefcase,
       href: '/applications',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
     },
     {
       title: 'Network Contacts',
       value: stats.totalContacts,
       icon: Users,
       href: '/contacts',
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
     },
     {
       title: 'Applied This Week',
       value: stats.appliedThisWeek,
       icon: TrendingUp,
       href: '/applications',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
     },
     {
       title: 'Interviews Scheduled',
       value: stats.interviewsScheduled,
       icon: Target,
       href: '/applications',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50',
     },
   ];
 
@@ -396,13 +384,13 @@ export default function Dashboard() {
                 <div className='p-6'>
                   <div className='flex items-center gap-3 mb-4'>
                     <motion.div
-                      className={`p-2 rounded-lg ${card.bgColor}`}
+                      className='p-2 rounded-lg bg-neutral-100 border border-neutral-200'
                       whileHover={{
                         scale: 1.1,
                         transition: { type: 'spring', stiffness: 400, damping: 25 },
                       }}
                     >
-                      <card.icon className={`h-5 w-5 ${card.color}`} />
+                      <card.icon className='h-5 w-5 text-neutral-600' />
                     </motion.div>
                   </div>
                   <motion.div
@@ -474,7 +462,7 @@ export default function Dashboard() {
                 >
                   <div className='flex items-center gap-4'>
                     <motion.div
-                      className={`p-3 rounded-lg bg-neutral-100 ${action.color}`}
+                      className='p-3 rounded-lg bg-neutral-100 text-neutral-600'
                       whileHover={{
                         scale: 1.1,
                         transition: { type: 'spring', stiffness: 400, damping: 25 },
