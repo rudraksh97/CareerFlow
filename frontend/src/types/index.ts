@@ -109,3 +109,69 @@ export interface Contact {
   created_at: string;
   updated_at: string;
 }
+
+// Resource Types
+export interface ResourceGroup {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResourceGroupCreate {
+  name: string;
+  description?: string;
+  color?: string;
+  is_active?: boolean;
+}
+
+export interface ResourceGroupUpdate {
+  name?: string;
+  description?: string;
+  color?: string;
+  is_active?: boolean;
+}
+
+export interface Resource {
+  id: string;
+  name: string;
+  url: string;
+  description?: string;
+  group_id?: string;
+  tags?: string;
+  is_favorite: boolean;
+  visit_count: string;
+  last_visited?: string;
+  created_at: string;
+  updated_at: string;
+  group?: ResourceGroup;
+}
+
+export interface ResourceCreate {
+  name: string;
+  url: string;
+  description?: string;
+  group_id?: string;
+  tags?: string;
+  is_favorite?: boolean;
+}
+
+export interface ResourceUpdate {
+  name?: string;
+  url?: string;
+  description?: string;
+  group_id?: string;
+  tags?: string;
+  is_favorite?: boolean;
+}
+
+export interface ResourceAnalytics {
+  total_resources: number;
+  total_groups: number;
+  favorites_count: number;
+  most_visited: Resource[];
+  recent_resources: Resource[];
+}

@@ -9,6 +9,7 @@ import {
   Settings,
   BarChart3,
   MessageSquare,
+  Bookmark,
   Menu,
   X,
   ChevronLeft,
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Resumes', href: '/resumes', icon: FileText },
   { name: 'Cover Letters', href: '/cover-letters', icon: FileText },
   { name: 'Referral Messages', href: '/referral-messages', icon: MessageSquare },
+  { name: 'Resources', href: '/resources', icon: Bookmark },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];

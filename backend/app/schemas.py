@@ -250,4 +250,67 @@ class TemplateFile(TemplateFileBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+# Resource Group Schemas
+class ResourceGroupBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color: Optional[str] = None
+    is_active: bool = True
+
+class ResourceGroupCreate(ResourceGroupBase):
+    pass
+
+class ResourceGroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class ResourceGroup(ResourceGroupBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Resource Schemas
+class ResourceBase(BaseModel):
+    name: str
+    url: HttpUrl
+    description: Optional[str] = None
+    group_id: Optional[str] = None
+    tags: Optional[str] = None
+    is_favorite: bool = False
+
+class ResourceCreate(ResourceBase):
+    pass
+
+class ResourceUpdate(BaseModel):
+    name: Optional[str] = None
+    url: Optional[HttpUrl] = None
+    description: Optional[str] = None
+    group_id: Optional[str] = None
+    tags: Optional[str] = None
+    is_favorite: Optional[bool] = None
+
+class Resource(ResourceBase):
+    id: str
+    visit_count: str
+    last_visited: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    group: Optional[ResourceGroup] = None
+
+    class Config:
+        from_attributes = True
+
+# Resource Analytics Schema
+class ResourceAnalytics(BaseModel):
+    total_resources: int
+    total_groups: int
+    favorites_count: int
+    most_visited: List[Resource]
+    recent_resources: List[Resource] 
