@@ -102,14 +102,7 @@ const Resumes = () => {
     return filtered;
   }, [applications, searchTerm, companyFilter, dateFilter, sortField, sortDirection]);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
+
 
   const clearFilters = () => {
     setSearchTerm('');

@@ -90,7 +90,6 @@ export default function Applications() {
   
   // Bulk actions state
   const [selectedApplications, setSelectedApplications] = useState<Set<string>>(new Set());
-  const [showBulkActions, setShowBulkActions] = useState(false);
   
   // View mode state
   const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
@@ -166,7 +165,6 @@ export default function Applications() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       setSelectedApplications(new Set());
-      setShowBulkActions(false);
       setShowSuccessMessage(`Successfully updated ${variables.ids.length} application(s) to "${variables.status}" status`);
       setTimeout(() => setShowSuccessMessage(''), 3000);
     },
@@ -182,7 +180,6 @@ export default function Applications() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       setSelectedApplications(new Set());
-      setShowBulkActions(false);
       setShowSuccessMessage(`Successfully updated ${variables.ids.length} application(s) to "${variables.priority}" priority`);
       setTimeout(() => setShowSuccessMessage(''), 3000);
     },
@@ -196,7 +193,6 @@ export default function Applications() {
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['applications'] });
       setSelectedApplications(new Set());
-      setShowBulkActions(false);
       setShowSuccessMessage(`Successfully deleted ${ids.length} application(s)`);
       setTimeout(() => setShowSuccessMessage(''), 3000);
     },
@@ -611,11 +607,9 @@ export default function Applications() {
   const handleSelectAll = () => {
     if (selectedApplications.size === filteredAndSortedApplications.length) {
       setSelectedApplications(new Set());
-      setShowBulkActions(false);
     } else {
       const allIds = new Set(filteredAndSortedApplications.map(app => app.id));
       setSelectedApplications(allIds);
-      setShowBulkActions(true);
     }
   };
 
@@ -627,7 +621,6 @@ export default function Applications() {
       newSelected.add(id);
     }
     setSelectedApplications(newSelected);
-    setShowBulkActions(newSelected.size > 0);
   };
 
   const handleBulkUpdateStatus = (status: string) => {
@@ -1164,7 +1157,7 @@ export default function Applications() {
                    
                    {/* Applications for this day */}
                    <div className="space-y-1 overflow-hidden">
-                     {dayApplications.slice(0, 3).map((app, appIndex) => (
+                     {dayApplications.slice(0, 3).map((app, _) => (
                        <div
                          key={app.id}
                          className={`text-xs px-2 py-1 rounded cursor-pointer hover:scale-105 transition-transform ${getStatusColor(app.status)} border border-opacity-20 overflow-hidden`}

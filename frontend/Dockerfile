@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# Multi-stage build for frontend
+FROM node:20-alpine AS base
 
 # Build arguments for version information
 ARG VERSION="unknown"
@@ -21,7 +22,6 @@ WORKDIR /app
 
 # Set environment variables to fix crypto issues
 ENV NODE_OPTIONS="--openssl-legacy-provider"
-ENV VITE_DEV_SERVER_HOST=0.0.0.0
 
 # Copy package files
 COPY package*.json ./
@@ -31,6 +31,20 @@ RUN npm install
 
 # Copy source code
 COPY . .
+
+# Build stage - Creates static files for production
+FROM base AS build
+
+# Build the application
+RUN npm run build
+
+# Output the build artifacts
+CMD ["cp", "-r", "dist", "/app/"]
+
+# Development stage - For development server
+FROM base AS dev
+
+ENV VITE_DEV_SERVER_HOST=0.0.0.0
 
 # Expose port
 EXPOSE 3000
