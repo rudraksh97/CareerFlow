@@ -32,12 +32,13 @@ import {
   CheckSquare,
   Download,
   RotateCw,
-  AlertTriangle,
   Table,
   ChevronLeft,
   ChevronRight,
+  Columns,
+  Check,
 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 import ApplicationForm from '../components/ApplicationForm';
 import { api } from '../services/api';
@@ -124,6 +125,20 @@ export default function Applications() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState({
+    company: true,
+    role: true,
+    resume: true,
+    appliedWith: true,
+    status: true,
+    priority: true,
+    notes: true,
+    referralContact: false,
+    action: true,
+  });
+  const [showColumnDropdown, setShowColumnDropdown] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -508,6 +523,29 @@ export default function Applications() {
     setShowCustomDatePicker(false);
     resetPagination();
   };
+
+  // Column visibility toggle
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev => ({
+      ...prev,
+      [columnKey]: !prev[columnKey as keyof typeof prev]
+    }));
+  };
+
+  // Close dropdown when clicking outside
+  const columnDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (columnDropdownRef.current && !columnDropdownRef.current.contains(event.target as Node)) {
+        setShowColumnDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Handle search and filter changes with pagination reset
   const handleSearchChange = (value: string) => {
@@ -1045,9 +1083,9 @@ export default function Applications() {
       });
     };
 
-    const handleMouseLeave = () => {
-      setHoveredApp(null);
-    };
+      const handleMouseLeave = () => {
+    setHoveredApp(null);
+  };
 
     return (
       <div className="space-y-6">
@@ -1976,7 +2014,7 @@ export default function Applications() {
                 )}
               </div>
               
-              {/* View Toggle - moved to header */}
+              {/* View Toggle and Column Selector */}
               <div className='flex items-center gap-1'>
                 <button
                   onClick={() => setViewMode('table')}
@@ -2001,6 +2039,56 @@ export default function Applications() {
                 >
                   <Calendar className='h-4 w-4' />
                 </button>
+                
+                {/* Column Selector - only show in table view */}
+                {viewMode === 'table' && (
+                  <div className="relative" ref={columnDropdownRef}>
+                    <button
+                      onClick={() => setShowColumnDropdown(!showColumnDropdown)}
+                      className="p-2 rounded-md bg-neutral-100 text-neutral-600 hover:bg-neutral-200 transition-all"
+                      title="Select columns"
+                    >
+                      <Columns className="h-4 w-4" />
+                    </button>
+                    
+                    <AnimatePresence>
+                      {showColumnDropdown && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute right-0 top-full mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg py-2 z-10"
+                        >
+                          <div className="px-3 py-2 text-xs font-medium text-neutral-500 border-b border-neutral-100">
+                            Show/Hide Columns
+                          </div>
+                          {[
+                            { key: 'company', label: 'Company' },
+                            { key: 'role', label: 'Role' },
+                            { key: 'resume', label: 'Resume' },
+                            { key: 'appliedWith', label: 'Applied With' },
+                            { key: 'status', label: 'Status' },
+                            { key: 'priority', label: 'Priority' },
+                            { key: 'notes', label: 'Notes' },
+                            { key: 'referralContact', label: 'Referral Contact' },
+                            { key: 'action', label: 'Actions' },
+                          ].map((column) => (
+                            <button
+                              key={column.key}
+                              onClick={() => toggleColumn(column.key)}
+                              className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-neutral-50 transition-colors"
+                            >
+                              <span className="text-neutral-700">{column.label}</span>
+                              {visibleColumns[column.key as keyof typeof visibleColumns] && (
+                                <Check className="h-4 w-4 text-green-600" />
+                              )}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -2264,15 +2352,15 @@ export default function Applications() {
                             )}
                           </button>
                         </th>
-                        <SortableHeader field='company_name'>Company</SortableHeader>
-                        <SortableHeader field='job_title'>Role</SortableHeader>
-                        <th className='text-left p-3 font-semibold text-neutral-900'>Resume</th>
-                        <SortableHeader field='email_used'>Applied With</SortableHeader>
-                        <SortableHeader field='status'>Status</SortableHeader>
-                        <SortableHeader field='priority'>Priority</SortableHeader>
-                        <th className='text-left p-3 font-semibold text-neutral-900'>Notes</th>
-                        <th className='text-left p-3 font-semibold text-neutral-900'>Referral Contact</th>
-                        <th className='text-left p-3 font-semibold text-neutral-900'>Actions</th>
+                        {visibleColumns.company && <SortableHeader field='company_name'>Company</SortableHeader>}
+                        {visibleColumns.role && <SortableHeader field='job_title'>Role</SortableHeader>}
+                        {visibleColumns.resume && <th className='text-left p-3 font-semibold text-neutral-900'>Resume</th>}
+                        {visibleColumns.appliedWith && <SortableHeader field='email_used'>Applied With</SortableHeader>}
+                        {visibleColumns.status && <SortableHeader field='status'>Status</SortableHeader>}
+                        {visibleColumns.priority && <SortableHeader field='priority'>Priority</SortableHeader>}
+                        {visibleColumns.notes && <th className='text-left p-3 font-semibold text-neutral-900'>Notes</th>}
+                        {visibleColumns.referralContact && <th className='text-left p-3 font-semibold text-neutral-900'>Referral Contact</th>}
+                        {visibleColumns.action && <th className='text-left p-3 font-semibold text-neutral-900'>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -2304,141 +2392,159 @@ export default function Applications() {
                             </td>
                             
                             {/* Company */}
-                            <td className='p-3'>
-                              <div className='flex items-center gap-3'>
-                                <div className='p-2 rounded-lg bg-blue-50'>
-                                  <Building className='h-4 w-4 text-blue-600' />
-                                </div>
-                                <div>
-                                  <div className='font-medium text-neutral-900'>
-                                    {application.company_name}
+                            {visibleColumns.company && (
+                              <td className='p-3'>
+                                <div className='flex items-center gap-3'>
+                                  <div className='p-2 rounded-lg bg-blue-50'>
+                                    <Building className='h-4 w-4 text-blue-600' />
                                   </div>
-                                  <div className='text-sm text-neutral-500'>
-                                    Applied {new Date(application.date_applied).toLocaleDateString()}
+                                  <div>
+                                    <div className='font-medium text-neutral-900'>
+                                      {application.company_name}
+                                    </div>
+                                    <div className='text-sm text-neutral-500'>
+                                      Applied {new Date(application.date_applied).toLocaleDateString()}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </td>
+                              </td>
+                            )}
 
                             {/* Role */}
-                            <td className='p-3'>
-                              <div>
-                                <div className='font-medium text-neutral-900 mb-1'>
-                                  {application.job_title}
+                            {visibleColumns.role && (
+                              <td className='p-3'>
+                                <div>
+                                  <div className='font-medium text-neutral-900 mb-1'>
+                                    {application.job_title}
+                                  </div>
+                                  {application.job_url && (
+                                    <a
+                                      href={application.job_url}
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                      className='inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors'
+                                    >
+                                      <ExternalLink className='h-3 w-3' />
+                                      View Posting
+                                    </a>
+                                  )}
                                 </div>
-                                {application.job_url && (
-                                  <a
-                                    href={application.job_url}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    className='inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 transition-colors'
-                                  >
-                                    <ExternalLink className='h-3 w-3' />
-                                    View Posting
-                                  </a>
-                                )}
-                              </div>
-                            </td>
+                              </td>
+                            )}
 
                             {/* Resume */}
-                            <td className='p-3'>
-                              {application.resume_filename ? (
-                                <a
-                                  href={`/api/applications/${application.id}/resume`}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                  className='flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors group'
-                                >
-                                  <FileText className='h-4 w-4 group-hover:scale-110 transition-transform' />
-                                  <span
-                                    className='text-sm truncate max-w-32'
-                                    title={application.resume_filename}
+                            {visibleColumns.resume && (
+                              <td className='p-3'>
+                                {application.resume_filename ? (
+                                  <a
+                                    href={`/api/applications/${application.id}/resume`}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    className='flex items-center gap-2 text-blue-600 hover:text-blue-700 transition-colors group'
                                   >
-                                    {application.resume_filename}
-                                  </span>
-                                  <ExternalLink className='h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity' />
-                                </a>
-                              ) : (
-                                <span className='text-sm text-neutral-400'>-</span>
-                              )}
-                            </td>
+                                    <FileText className='h-4 w-4 group-hover:scale-110 transition-transform' />
+                                    <span
+                                      className='text-sm truncate max-w-32'
+                                      title={application.resume_filename}
+                                    >
+                                      {application.resume_filename}
+                                    </span>
+                                    <ExternalLink className='h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity' />
+                                  </a>
+                                ) : (
+                                  <span className='text-sm text-neutral-400'>-</span>
+                                )}
+                              </td>
+                            )}
 
                             {/* Applied With */}
-                            <td className='p-3'>
-                              <div className='flex items-center gap-2'>
-                                <Mail className='h-4 w-4 text-neutral-500' />
-                                <span className='text-sm text-neutral-700'>
-                                  {application.email_used}
-                                </span>
-                              </div>
-                            </td>
+                            {visibleColumns.appliedWith && (
+                              <td className='p-3'>
+                                <div className='flex items-center gap-2'>
+                                  <Mail className='h-4 w-4 text-neutral-500' />
+                                  <span className='text-sm text-neutral-700'>
+                                    {application.email_used}
+                                  </span>
+                                </div>
+                              </td>
+                            )}
 
                             {/* Status */}
-                            <td className='p-3'>
-                              <span className={getStatusColor(application.status)}>
-                                {application.status.charAt(0).toUpperCase() +
-                                  application.status.slice(1)}
-                              </span>
-                            </td>
+                            {visibleColumns.status && (
+                              <td className='p-3'>
+                                <span className={getStatusColor(application.status)}>
+                                  {application.status.charAt(0).toUpperCase() +
+                                    application.status.slice(1)}
+                                </span>
+                              </td>
+                            )}
 
                             {/* Priority */}
-                            <td className='p-3'>
-                              <div
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${getPriorityColor(application.priority)}`}
-                              >
-                                {getPriorityIcon(application.priority)}
-                                <span>
-                                  {application.priority.charAt(0).toUpperCase() +
-                                    application.priority.slice(1)}
-                                </span>
-                              </div>
-                            </td>
+                            {visibleColumns.priority && (
+                              <td className='p-3'>
+                                <div
+                                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border ${getPriorityColor(application.priority)}`}
+                                >
+                                  {getPriorityIcon(application.priority)}
+                                  <span>
+                                    {application.priority.charAt(0).toUpperCase() +
+                                      application.priority.slice(1)}
+                                  </span>
+                                </div>
+                              </td>
+                            )}
 
                             {/* Notes */}
-                            <td className='p-3'>
-                              {application.notes ? (
-                                <div
-                                  className='text-sm text-neutral-700 max-w-48 truncate'
-                                  title={application.notes}
-                                >
-                                  {application.notes}
-                                </div>
-                              ) : (
-                                <span className='text-sm text-neutral-400'>-</span>
-                              )}
-                            </td>
+                            {visibleColumns.notes && (
+                              <td className='p-3'>
+                                {application.notes ? (
+                                  <div
+                                    className='text-sm text-neutral-700 max-w-48 truncate'
+                                    title={application.notes}
+                                  >
+                                    {application.notes}
+                                  </div>
+                                ) : (
+                                  <span className='text-sm text-neutral-400'>-</span>
+                                )}
+                              </td>
+                            )}
 
                             {/* Referral Contact */}
-                            <td className='p-3'>
-                              <div className='flex items-center gap-2 text-sm text-neutral-400'>
-                                <User className='h-4 w-4' />
-                                <span>-</span>
-                              </div>
-                            </td>
+                            {visibleColumns.referralContact && (
+                              <td className='p-3'>
+                                <div className='flex items-center gap-2 text-sm text-neutral-400'>
+                                  <User className='h-4 w-4' />
+                                  <span>-</span>
+                                </div>
+                              </td>
+                            )}
 
                             {/* Actions */}
-                            <td className='p-3'>
-                              <div className='flex items-center gap-1'>
-                                <motion.button
-                                  onClick={() => handleEditApplication(application)}
-                                  className='p-2 text-neutral-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200'
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  title='Edit application'
-                                >
-                                  <Edit className='h-4 w-4' />
-                                </motion.button>
-                                <motion.button
-                                  onClick={() => handleDeleteApplication(application.id)}
-                                  className='p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200'
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  title='Delete application'
-                                >
-                                  <Trash2 className='h-4 w-4' />
-                                </motion.button>
-                              </div>
-                            </td>
+                            {visibleColumns.action && (
+                              <td className='p-3'>
+                                <div className='flex items-center gap-1'>
+                                  <motion.button
+                                    onClick={() => handleEditApplication(application)}
+                                    className='p-2 text-neutral-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200'
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    title='Edit application'
+                                  >
+                                    <Edit className='h-4 w-4' />
+                                  </motion.button>
+                                  <motion.button
+                                    onClick={() => handleDeleteApplication(application.id)}
+                                    className='p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200'
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    title='Delete application'
+                                  >
+                                    <Trash2 className='h-4 w-4' />
+                                  </motion.button>
+                                </div>
+                              </td>
+                            )}
                           </motion.tr>
                         ))}
                       </AnimatePresence>
