@@ -260,11 +260,11 @@ const NavigationItem = memo(({ item, index, isActive, isCollapsed }: {
       {/* Active indicator line */}
       {isActive && (
         <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className='absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-neutral-800 to-neutral-600 rounded-r-full'
-          layoutId='activeIndicatorLine'
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          initial={{ scaleY: 0, opacity: 0 }}
+          animate={{ scaleY: 1, opacity: 1 }}
+          exit={{ scaleY: 0, opacity: 0 }}
+          className='absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-neutral-800 to-neutral-600 rounded-r-full origin-center'
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         />
       )}
       
@@ -312,9 +312,9 @@ const NavigationItem = memo(({ item, index, isActive, isCollapsed }: {
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
           className='w-2 h-2 bg-neutral-900 rounded-full shadow-sm'
-          layoutId='activeIndicator'
-          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
         />
       )}
     </Link>
