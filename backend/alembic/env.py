@@ -7,10 +7,7 @@ from alembic import context
 
 # Import all models to ensure they are registered with SQLAlchemy
 from app.models.database import Base
-from app.models.application import Application
-from app.models.contact import Contact, Interaction
-from app.models.profile import Profile
-from app.models.setting import Setting
+from app.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

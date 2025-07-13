@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import applications, contacts, analytics, settings, profile, resumes, cover_letters, referral_messages, template_files, resources
+from .routes import applications, contacts, analytics, settings, profile, resumes, cover_letters, referral_messages, template_files, resources, emails, calendar_events, todos, reminders
 from .models.database import engine, Base
 from .version import VERSION_INFO, VERSION
 
@@ -33,6 +33,10 @@ app.include_router(cover_letters.router, prefix="/api/cover-letters", tags=["cov
 app.include_router(referral_messages.router, prefix="/api/referral-messages", tags=["referral_messages"])
 app.include_router(template_files.router, prefix="/api/template-files", tags=["template_files"])
 app.include_router(resources.router, prefix="/api/resources", tags=["resources"])
+app.include_router(emails.router, prefix="/api/emails", tags=["emails"])
+app.include_router(calendar_events.router, prefix="/api/calendar-events", tags=["calendar_events"])
+app.include_router(todos.router, prefix="/api/todos", tags=["todos"])
+app.include_router(reminders.router, prefix="/api/reminders", tags=["reminders"])
 
 
 @app.get("/")

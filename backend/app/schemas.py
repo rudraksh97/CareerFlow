@@ -5,6 +5,9 @@ from .models.application import ApplicationStatus, ApplicationSource, Applicatio
 from .models.contact import ContactType
 from .models.referral_message import ReferralMessageType
 from .models.template_file import TemplateFileType
+from .models.email import EmailStatus, EmailPriority, EmailCategory
+from .models.calendar_event import EventStatus, EventType
+from .models.reminder import ReminderType, ReminderPriority
 
 # Application Schemas
 class ApplicationBase(BaseModel):
@@ -313,4 +316,166 @@ class ResourceAnalytics(BaseModel):
     total_groups: int
     favorites_count: int
     most_visited: List[Resource]
-    recent_resources: List[Resource] 
+    recent_resources: List[Resource]
+
+# Email Schemas
+class EmailBase(BaseModel):
+    thread_id: Optional[str] = None
+    subject: str
+    sender_name: Optional[str] = None
+    sender_email: str
+    recipient_email: str
+    body_text: Optional[str] = None
+    body_html: Optional[str] = None
+    date_received: datetime
+    status: EmailStatus = EmailStatus.UNREAD
+    priority: EmailPriority = EmailPriority.MEDIUM
+    category: Optional[EmailCategory] = None
+    is_hiring_related: bool = False
+    confidence_score: Optional[str] = None
+    labels: Optional[str] = None
+    attachments: Optional[str] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    application_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class EmailCreate(EmailBase):
+    id: str
+
+class EmailUpdate(BaseModel):
+    subject: Optional[str] = None
+    status: Optional[EmailStatus] = None
+    priority: Optional[EmailPriority] = None
+    category: Optional[EmailCategory] = None
+    is_hiring_related: Optional[bool] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    application_id: Optional[str] = None
+    notes: Optional[str] = None
+
+class EmailSchema(EmailBase):
+    id: str
+    is_synced: bool
+    last_sync_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class EmailFilter(BaseModel):
+    status: Optional[EmailStatus] = None
+    category: Optional[EmailCategory] = None
+    is_hiring_related: Optional[bool] = None
+    sender_email: Optional[str] = None
+    company_name: Optional[str] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+
+# Calendar Event Schemas
+class CalendarEventBase(BaseModel):
+    calendar_id: str
+    summary: str
+    description: Optional[str] = None
+    location: Optional[str] = None
+    start_datetime: datetime
+    end_datetime: datetime
+    timezone: Optional[str] = None
+    is_all_day: bool = False
+    status: EventStatus = EventStatus.CONFIRMED
+    event_type: Optional[EventType] = None
+    is_hiring_related: bool = False
+    confidence_score: Optional[str] = None
+    organizer_email: Optional[str] = None
+    organizer_name: Optional[str] = None
+    attendees: Optional[str] = None
+    meeting_link: Optional[str] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    application_id: Optional[str] = None
+    interview_round: Optional[str] = None
+    notes: Optional[str] = None
+    reminder_sent: bool = False
+
+class CalendarEventCreate(CalendarEventBase):
+    id: str
+
+class CalendarEventUpdate(BaseModel):
+    summary: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    status: Optional[EventStatus] = None
+    event_type: Optional[EventType] = None
+    is_hiring_related: Optional[bool] = None
+    company_name: Optional[str] = None
+    job_title: Optional[str] = None
+    application_id: Optional[str] = None
+    interview_round: Optional[str] = None
+    notes: Optional[str] = None
+    reminder_sent: Optional[bool] = None
+
+class CalendarEventSchema(CalendarEventBase):
+    id: str
+    is_synced: bool
+    last_sync_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True 
+
+# Todo Schemas
+class TodoBase(BaseModel):
+    text: str
+    completed: bool = False
+
+class TodoCreate(TodoBase):
+    pass
+
+class TodoUpdate(BaseModel):
+    text: Optional[str] = None
+    completed: Optional[bool] = None
+
+class Todo(TodoBase):
+    id: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Reminder Schemas
+class ReminderBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    reminder_time: str
+    reminder_date: datetime
+    type: ReminderType = ReminderType.ONE_TIME
+    priority: ReminderPriority = ReminderPriority.MEDIUM
+    completed: bool = False
+    is_active: bool = True
+    recurrence_pattern: Optional[str] = None
+    next_reminder_date: Optional[datetime] = None
+
+class ReminderCreate(ReminderBase):
+    pass
+
+class ReminderUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    reminder_time: Optional[str] = None
+    reminder_date: Optional[datetime] = None
+    type: Optional[ReminderType] = None
+    priority: Optional[ReminderPriority] = None
+    completed: Optional[bool] = None
+    is_active: Optional[bool] = None
+    recurrence_pattern: Optional[str] = None
+    next_reminder_date: Optional[datetime] = None
+
+class Reminder(ReminderBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True 

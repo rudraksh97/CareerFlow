@@ -13,6 +13,8 @@ const Profile = React.lazy(() => import('./pages/Profile'));
 const Resumes = React.lazy(() => import('./pages/Resumes'));
 const CoverLetters = React.lazy(() => import('./pages/CoverLetters'));
 const Resources = React.lazy(() => import('./pages/Resources'));
+const Emails = React.lazy(() => import('./pages/Emails'));
+const Calendar = React.lazy(() => import('./pages/Calendar'));
 
 const App: React.FC = () => {
   return (
@@ -22,6 +24,8 @@ const App: React.FC = () => {
           <Route path='/' element={<Dashboard />} />
           <Route path='/applications' element={<Applications />} />
           <Route path='/contacts' element={<Contacts />} />
+          <Route path='/emails' element={<Emails />} />
+          <Route path='/calendar' element={<Calendar />} />
           <Route path='/referral-messages' element={<ReferralMessages />} />
           <Route path='/resources' element={<Resources />} />
           <Route path='/analytics' element={<Analytics />} />

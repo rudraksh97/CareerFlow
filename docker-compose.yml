@@ -27,6 +27,9 @@ services:
       - ./backups:/app/backups
     environment:
       - DATABASE_URL=sqlite:///./data/pats.db
+      - GOOGLE_CLIENT_ID=
+      - GOOGLE_CLIENT_SECRET=
+      - GOOGLE_OAUTH_REDIRECT_URI=http://localhost:3000/api/settings/auth/google/callback
     command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
 

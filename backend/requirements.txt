@@ -9,4 +9,10 @@ bcrypt
 alembic
 openai
 requests
-beautifulsoup4 
+beautifulsoup4
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+google-api-core
+python-dateutil 

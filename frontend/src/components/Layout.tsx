@@ -18,6 +18,8 @@ import {
   User,
   Github,
   Linkedin,
+  Mail,
+  Calendar,
 } from 'lucide-react';
 
 import VersionDisplay from './VersionDisplay';
@@ -30,6 +32,8 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Applications', href: '/applications', icon: Briefcase },
   { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Emails', href: '/emails', icon: Mail },
+  { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Resumes', href: '/resumes', icon: FileText },
   { name: 'Cover Letters', href: '/cover-letters', icon: FileText },
   { name: 'Referral Messages', href: '/referral-messages', icon: MessageSquare },
